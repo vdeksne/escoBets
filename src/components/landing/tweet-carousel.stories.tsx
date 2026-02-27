@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Pricing } from "./pricing";
+import { TweetCarousel } from "./tweet-carousel";
 
 const meta = {
-  title: "Landing/Pricing",
-  component: Pricing,
+  title: "Landing/TweetCarousel",
+  component: TweetCarousel,
   parameters: {
     layout: "fullscreen",
+    backgrounds: { default: "dark", values: [{ name: "dark", value: "#000000" }] },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof Pricing>;
+} satisfies Meta<typeof TweetCarousel>;
 
 export default meta;
 

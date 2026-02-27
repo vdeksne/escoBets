@@ -7,3 +7,4 @@ export { BookDemo } from "./book-demo";
 export { NewDeals } from "./new-deals";
 export { FAQ } from "./faq";
 export { Footer } from "./footer";
+export { LoginForm } from "./login-form";

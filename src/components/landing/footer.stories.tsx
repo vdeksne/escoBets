@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Pricing } from "./pricing";
+import { Footer } from "./footer";
 
 const meta = {
-  title: "Landing/Pricing",
-  component: Pricing,
+  title: "Landing/Footer",
+  component: Footer,
   parameters: {
     layout: "fullscreen",
+    backgrounds: { default: "dark", values: [{ name: "dark", value: "#000000" }] },
   },
   tags: ["autodocs"],
-} satisfies Meta<typeof Pricing>;
+} satisfies Meta<typeof Footer>;
 
 export default meta;
 

@@ -2,6 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Gotham – local fonts (app + Storybook) */
+@font-face {
+  font-family: "Gotham";
+  src: url("/fonts/Gotham Light.woff2") format("woff2"), url("/fonts/Gotham Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham";
+  src: url("/fonts/Gotham Medium.woff2") format("woff2"), url("/fonts/Gotham Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gotham";
+  src: url("/fonts/Gotham Bold.woff2") format("woff2"), url("/fonts/Gotham Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: 0 0% 0%;
   --foreground: 0 0% 100%;
@@ -16,6 +39,7 @@
 }
 
 body {
+  font-family: "Gotham", system-ui, sans-serif;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
 }
