@@ -106,7 +106,13 @@ export function Hero() {
           </span>
         </div>
         <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
-          Elite Telegram Betting Insights
+          Elite Telegram Betting{" "}
+          <span
+            className="text-[#FBFE27]"
+            style={{ textShadow: "0 0 66.667px #FBFE27" }}
+          >
+            Insights
+          </span>
         </h1>
         <p className="mb-6 text-xl text-white/90 md:text-2xl">
           High-Confidence Picks. Proven Data. Real Results.

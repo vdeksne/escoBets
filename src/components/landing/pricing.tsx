@@ -13,19 +13,44 @@ const features = [
   "Pause or cancel anytime",
 ];
 
+const PLANS = {
+  monthly: {
+    badge: "1-Month Plan",
+    pricePerMonth: 20,
+    title: "Monthly plan",
+    description:
+      "Flexible, cancel anytime. Just elite betting insights for one low monthly fee.",
+  },
+  sprint: {
+    badge: "3-Month Sprint",
+    pricePerMonth: 15,
+    billedTotal: 45,
+    title: "3-month commitment",
+    description:
+      "Save 25% when you commit. Same elite insights, lower price.",
+  },
+} as const;
+
 export function Pricing() {
   const [plan, setPlan] = useState<"monthly" | "sprint">("monthly");
   const [consultations, setConsultations] = useState(false);
 
-  const price = plan === "monthly" ? 20 : 20;
-  const total = price + (consultations ? 100 : 0);
+  const config = PLANS[plan];
+  const sprintBilled =
+    plan === "sprint"
+      ? (config as typeof PLANS.sprint).billedTotal + (consultations ? 100 : 0)
+      : 0;
+  const monthlyTotal = config.pricePerMonth + (consultations ? 100 : 0);
 
   return (
     <section className="px-4 py-16 md:py-24">
       <div className="container mx-auto max-w-4xl">
         <h2 className="mb-2 text-center text-3xl font-bold md:text-4xl">
           Simple{" "}
-          <span className="text-escobets-yellow drop-shadow-[0_0_12px_rgba(223,255,0,0.5)]">
+          <span
+            className="text-[#FBFE27]"
+            style={{ textShadow: "0 0 66.667px #FBFE27" }}
+          >
             Pricing
           </span>
         </h2>
@@ -70,19 +95,26 @@ export function Pricing() {
             {/* Left: Plan details */}
             <div>
               <span className="inline-block rounded bg-black/50 px-2.5 py-1 text-xs font-medium text-white">
-                1-Month Sprint
+                {config.badge}
               </span>
               <p className="mt-4 text-4xl font-bold text-escobets-yellow">
-                ${total}
+                ${plan === "sprint" ? config.pricePerMonth : monthlyTotal}
                 <span className="text-lg font-normal text-white/70">
                   /month
                 </span>
               </p>
+              {plan === "sprint" && (
+                <p className="mt-1 text-xs text-white/50">
+                  Billed $
+                  {sprintBilled || (config as typeof PLANS.sprint).billedTotal}{" "}
+                  for 3 months
+                </p>
+              )}
               <p className="mt-2 font-semibold text-white">
-                One month sprint
+                {config.title}
               </p>
               <p className="mt-1 text-sm text-white/60">
-                Just elite betting insights for one low monthly fee.
+                {config.description}
               </p>
               <Button
                 variant="outline"
@@ -140,25 +172,23 @@ export function Pricing() {
           <p className="text-sm text-white/60">
             See how we can work for you.
           </p>
-          <Button
-            variant="outline"
-            className="rounded-[0.83331rem] border-2 border-escobets-yellow"
-            asChild
+          <Link
+            href="/demo"
+            className="flex items-center gap-0 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] px-1 py-1 pr-5 transition-colors hover:border-white/20 hover:bg-[#222]"
           >
-            <Link
-              href="#book-demo"
-              className="flex items-center gap-2"
-            >
-              <Sparkles className="h-4 w-4 text-escobets-yellow" />
-              <span className="flex flex-col items-start">
-                <span className="leading-tight">Let&apos;s chat</span>
-                <span className="text-xs font-normal text-white/80">
-                  Book a Demo
-                </span>
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/5">
+              <Sparkles className="h-5 w-5 text-escobets-yellow" />
+            </div>
+            <span className="flex flex-col items-start justify-center gap-0 pl-4 pr-6">
+              <span className="text-xs font-normal text-white/60">
+                Let&apos;s chat
               </span>
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
+              <span className="text-base font-bold text-white">
+                Book a Demo
+              </span>
+            </span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-white/60" />
+          </Link>
         </div>
       </div>
     </section>

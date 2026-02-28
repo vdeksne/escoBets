@@ -1,20 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const deals = [
   {
-    title: "Giveaways & Gifts",
-    date: "10/18/2026",
-    gradient: "from-amber-500/80 to-orange-600/80",
+    title: "Giveaway & Gifts",
+    date: "10/10/2026",
+    image: "/images/newDeals/Image.png",
   },
   {
     title: "Buy One, Get One",
-    date: "11/1/2026",
-    gradient: "from-emerald-500/80 to-teal-600/80",
+    date: "10/11/2026",
+    image: "/images/newDeals/Image-1.png",
   },
   {
     title: "Referral Program",
-    date: "10/30/2026",
-    gradient: "from-violet-500/80 to-purple-600/80",
+    date: "20/9/2026",
+    image: "/images/newDeals/Image-2.png",
   },
 ];
 
@@ -23,7 +24,13 @@ export function NewDeals() {
     <section className="px-4 py-16 md:py-24">
       <div className="container mx-auto">
         <h2 className="mb-8 text-center text-3xl font-bold md:text-4xl">
-          New <span className="text-escobets-yellow">Deals</span>
+          New{" "}
+          <span
+            className="text-[#FBFE27]"
+            style={{ textShadow: "0 0 66.667px #FBFE27" }}
+          >
+            Deals
+          </span>
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
           {deals.map((deal, i) => (
@@ -32,16 +39,20 @@ export function NewDeals() {
               href="/deals"
               className="group overflow-hidden rounded-xl border border-white/10 bg-escobets-gray-card transition hover:border-escobets-yellow/50"
             >
-              <div
-                className={`h-40 bg-gradient-to-br ${deal.gradient} flex items-center justify-center text-2xl font-bold text-white/90`}
-              >
-                Deal
+              <div className="relative aspect-[16/9] w-full overflow-hidden">
+                <Image
+                  src={deal.image}
+                  alt={deal.title}
+                  fill
+                  className="object-cover transition group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
               </div>
               <div className="p-4">
-                <p className="font-semibold text-white group-hover:text-escobets-yellow">
+                <p className="font-bold text-white transition group-hover:text-escobets-yellow">
                   {deal.title}
                 </p>
-                <p className="text-sm text-white/60">{deal.date}</p>
+                <p className="mt-1 text-sm text-white/60">{deal.date}</p>
               </div>
             </Link>
           ))}

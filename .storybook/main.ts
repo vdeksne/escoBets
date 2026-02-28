@@ -17,6 +17,7 @@ const config: StorybookConfig = {
   async viteFinal(config) {
     return {
       ...config,
+      base: "/",
       define: {
         ...config.define,
         "process.env": "{}",
@@ -38,6 +39,7 @@ const config: StorybookConfig = {
       optimizeDeps: {
         ...config.optimizeDeps,
         exclude: [...(config.optimizeDeps?.exclude ?? []), "next", "next/image"],
+        include: [...(config.optimizeDeps?.include ?? []), "react", "react-dom"],
       },
     };
   },

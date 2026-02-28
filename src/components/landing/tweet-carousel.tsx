@@ -8,7 +8,6 @@ import {
   Repeat2,
   Heart,
   Share2,
-  BarChart2,
   MoreVertical,
   BadgeCheck,
 } from "lucide-react";
@@ -86,7 +85,7 @@ export function TweetCarousel() {
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
-    const amount = 320;
+    const amount = 336; // card width (320) + gap (16)
     scrollRef.current.scrollBy({
       left: dir === "left" ? -amount : amount,
       behavior: "smooth",
@@ -103,9 +102,10 @@ export function TweetCarousel() {
           {tweets.map((tweet, i) => (
             <article
               key={i}
-              className="min-w-[300px] max-w-[340px] shrink-0 rounded-xl border border-white/10 bg-[#1a1a1a] p-4 shadow-[0_0_20px_rgba(255,255,255,0.03)]"
+              className="flex w-[320px] shrink-0 flex-col rounded-xl border border-white/10 bg-[#1a1a1a] p-4 shadow-[0_0_20px_rgba(255,255,255,0.03)]"
             >
-              <div className="mb-3 flex items-start gap-3">
+              {/* Header - fixed height */}
+              <div className="mb-3 flex shrink-0 items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-lg text-white/80">
                   𝕏
                 </div>
@@ -133,29 +133,27 @@ export function TweetCarousel() {
                   <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
-              <p className="mb-4 text-sm leading-relaxed text-white/90">
+              {/* Text - fixed height, clip overflow */}
+              <p className="mb-4 line-clamp-4 h-20 shrink-0 overflow-hidden text-sm leading-relaxed text-white/90">
                 {tweet.content}
               </p>
-              <div className="mb-4 flex h-32 items-center justify-center rounded-lg bg-white/5">
+              {/* Image placeholder - fixed height */}
+              <div className="mb-4 flex h-32 shrink-0 items-center justify-center rounded-lg bg-white/5">
                 <span className="text-4xl font-light text-white/20">𝕏</span>
               </div>
-              <div className="flex items-center gap-5 text-sm text-white/50">
-                <span className="flex items-center gap-1.5">
-                  <MessageCircle className="h-4 w-4" /> {tweet.replies}
+              {/* Icons - always at bottom, 4 icons to fit in card */}
+              <div className="mt-auto flex shrink-0 items-center gap-4 text-xs text-white/50">
+                <span className="flex items-center gap-1">
+                  <MessageCircle className="h-3.5 w-3.5 shrink-0" /> {tweet.replies}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Repeat2 className="h-4 w-4" /> {tweet.retweets}
+                <span className="flex items-center gap-1">
+                  <Repeat2 className="h-3.5 w-3.5 shrink-0" /> {tweet.retweets}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4" /> {tweet.likes}
+                <span className="flex items-center gap-1">
+                  <Heart className="h-3.5 w-3.5 shrink-0" /> {tweet.likes}
                 </span>
-                {tweet.views && (
-                  <span className="flex items-center gap-1.5">
-                    <BarChart2 className="h-4 w-4" /> {tweet.views}
-                  </span>
-                )}
-                <span className="flex items-center gap-1.5">
-                  <Share2 className="h-4 w-4" />
+                <span className="flex items-center gap-1">
+                  <Share2 className="h-3.5 w-3.5 shrink-0" />
                 </span>
               </div>
             </article>

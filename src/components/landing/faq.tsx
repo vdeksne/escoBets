@@ -37,26 +37,37 @@ const items = [
 export function FAQ() {
   return (
     <section className="px-4 py-16 md:py-24">
-      <div className="container mx-auto max-w-3xl">
+      <div className="container mx-auto max-w-4xl">
         <h2 className="mb-2 text-center text-3xl font-bold md:text-4xl">
           Frequently asked{" "}
-          <span className="text-escobets-yellow">questions</span>
+          <span
+            className="text-[#FBFE27]"
+            style={{ textShadow: "0 0 66.667px #FBFE27" }}
+          >
+            questions
+          </span>
         </h2>
         <p className="mb-10 text-center text-white/70">
           {"We're"} gonna say it — these {"aren't"} frequently asked, but {"we've"}{" "}
           added them here in case you were wondering.
         </p>
-        <Accordion type="single" collapsible className="space-y-2">
+        <Accordion type="single" collapsible className="flex flex-col items-center gap-4">
           {items.map((item, i) => (
             <AccordionItem
               key={i}
               value={`item-${i}`}
-              className="rounded-lg border border-white/10 bg-escobets-gray-card px-4"
+              className="w-full max-w-[70rem] shrink-0 overflow-hidden rounded-[1.25rem] border border-b-0 border-white/[0.05] p-0 shadow-[50px_15px_80px_-20px_rgba(85,85,124,0.08)] backdrop-blur-[13px]"
+              style={{
+                background:
+                  "linear-gradient(265deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)",
+              }}
             >
-              <AccordionTrigger className="text-left hover:no-underline">
+              <AccordionTrigger className="min-h-[6.16669rem] px-11 py-[0.91669rem] text-left text-base font-bold text-white hover:no-underline hover:bg-transparent [&[data-state=open]]:bg-white/[0.02]">
                 {item.q}
               </AccordionTrigger>
-              <AccordionContent>{item.a}</AccordionContent>
+              <AccordionContent className="border-t border-white/[0.05] px-11 pb-6 pt-4 text-white/80">
+                {item.a}
+              </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>

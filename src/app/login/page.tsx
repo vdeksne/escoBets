@@ -1,22 +1,50 @@
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { LoginForm } from "@/components/landing/login-form";
+import { VideoBackground } from "@/components/landing/video-background";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-black">
-      <Header />
-      <main className="relative flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center px-4 py-12">
-        {/* Decorative golden sphere area - optional background accent */}
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-          aria-hidden
-        >
-          <div className="absolute bottom-0 left-1/2 h-[60vh] w-[80vw] max-w-[600px] -translate-x-1/2 rounded-full bg-gradient-to-t from-escobets-yellow/20 via-escobets-yellow/5 to-transparent blur-3xl" />
+    <div className="flex min-h-screen flex-col bg-black">
+      <Header variant="withLogo" />
+
+      {/* Mobile: form on top, video section below so ball is visible */}
+      <div className="relative flex flex-1 flex-col md:hidden">
+        <main className="relative flex flex-col items-center px-4 pt-6 pb-4 shrink-0">
+          <LoginForm className="relative z-10" />
+        </main>
+        {/* Video section - ball visible under the form */}
+        <div className="relative min-h-[20vh] flex-1 flex flex-col">
+          <div className="absolute inset-0">
+            <VideoBackground
+              src="/videos/golden-ball.mp4"
+              className="object-[center_bottom]"
+            />
+          </div>
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40"
+            aria-hidden
+          />
         </div>
-        <LoginForm className="relative z-10" />
-      </main>
-      <Footer />
+      </div>
+
+      {/* Desktop: form overlays video */}
+      <div className="relative min-h-[75vh] flex-1 flex-col hidden md:flex">
+        <div className="absolute inset-0 top-[50px]">
+          <VideoBackground src="/videos/golden-ball.mp4" />
+        </div>
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20"
+          aria-hidden
+        />
+        <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-12">
+          <LoginForm className="relative z-10" />
+        </main>
+      </div>
+
+      <div className="relative z-10 shrink-0">
+        <Footer />
+      </div>
     </div>
   );
 }
