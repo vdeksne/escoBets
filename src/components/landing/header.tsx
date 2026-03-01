@@ -149,7 +149,7 @@ export function Header({ variant = "landing" }: HeaderProps) {
         <div
           className={cn(
             "fixed inset-0 top-0 left-0 right-0 z-40 min-[730px]:hidden",
-            "bg-black/98 backdrop-blur-md",
+            "bg-black backdrop-blur-md",
             "flex flex-col px-6 pt-20 pb-8",
             "transition-all duration-300 ease-out",
             mobileOpen ? "opacity-100 pointer-events-auto visible" : "opacity-0 pointer-events-none invisible"
