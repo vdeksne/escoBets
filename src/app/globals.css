@@ -43,3 +43,12 @@ body {
   color: hsl(var(--foreground));
   background: hsl(var(--background));
 }
+
+/* Keep subscription form inputs dark with white text when browser autofills */
+.subscription-form input:-webkit-autofill,
+.subscription-form input:-webkit-autofill:hover,
+.subscription-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0px 1000px #000 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}

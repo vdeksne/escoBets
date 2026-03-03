@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -36,7 +37,10 @@ type HeaderProps = {
 
 export function Header({ variant = "landing" }: HeaderProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const pathname = usePathname();
   const showLogoOnDesktop = variant === "withLogo";
+
+  const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(href));
 
   React.useEffect(() => {
     if (typeof document === "undefined") return;
@@ -70,6 +74,7 @@ export function Header({ variant = "landing" }: HeaderProps) {
             alt="EscoBets"
             width={120}
             height={32}
+            priority
             className="h-8 w-auto"
             style={{ width: "auto", height: "auto" }}
           />
@@ -173,7 +178,10 @@ export function Header({ variant = "landing" }: HeaderProps) {
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-5 py-4 text-lg font-light text-[#FFF] transition-colors hover:bg-white/10 hover:text-escobets-yellow hover:font-bold active:text-escobets-yellow active:font-bold"
+                className={cn(
+                  "rounded-xl px-5 py-4 text-lg font-light text-[#FFF] transition-colors hover:bg-white/10 hover:text-escobets-yellow hover:font-bold active:text-escobets-yellow active:font-bold",
+                  isActive(href) && "text-escobets-yellow font-bold"
+                )}
                 style={{ fontFamily: linkStyle.fontFamily, fontSize: linkStyle.fontSize, fontStyle: linkStyle.fontStyle, fontWeight: linkStyle.fontWeight, lineHeight: linkStyle.lineHeight }}
               >
                 {label}

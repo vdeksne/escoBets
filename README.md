@@ -20,15 +20,18 @@ Elite Telegram Betting Insights — high-confidence picks, proven data, and real
    npm install
    ```
 
-2. **Environment**
+2. **Environment (optional for now)**
 
-   Copy `.env.local.example` to `.env.local` and set your Supabase keys:
+   Supabase is optional until you add auth. To run without it, either:
+
+   - **Skip .env** – the app works with no Supabase config.
+   - **Or** copy `.env.local.example` to `.env.local` and leave the placeholder values. Replace them when you set up Supabase.
 
    ```bash
    cp .env.local.example .env.local
    ```
 
-   Get `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from [Supabase Dashboard](https://supabase.com/dashboard) → your project → Settings → API.
+   Real values: [Supabase Dashboard](https://supabase.com/dashboard) → your project → Settings → API.
 
 3. **Run dev**
 

@@ -121,7 +121,7 @@ export function Pricing() {
                 className="mt-6 w-full rounded-[0.83331rem] border-2 border-escobets-yellow"
                 asChild
               >
-                <Link href="/subscribe">Get Started</Link>
+                <Link href="/subscription">Get Started</Link>
               </Button>
             </div>
 
