@@ -10,19 +10,33 @@ export default function Image({
   width,
   height,
   className,
+  priority,
+  fill,
+  sizes,
+  placeholder,
+  loader,
+  quality,
+  unoptimized,
   ...rest
 }: ImgHTMLAttributes<HTMLImageElement> & {
   src: string;
   alt: string;
   width?: number;
   height?: number;
+  priority?: boolean;
+  fill?: boolean;
+  sizes?: string;
+  placeholder?: string;
+  loader?: () => void;
+  quality?: number;
+  unoptimized?: boolean;
 }) {
   return (
     <img
       src={src}
-      alt={alt}
-      width={width}
-      height={height}
+      alt={alt ?? ""}
+      width={fill ? undefined : width}
+      height={fill ? undefined : height}
       className={className}
       {...rest}
     />

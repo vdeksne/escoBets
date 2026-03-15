@@ -3,18 +3,21 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-const navLinks = [
+const baseNavLinks = [
   { href: "/news", label: "News" },
   { href: "/profit-tracker", label: "Profit Tracker" },
   { href: "/subscription", label: "Subscription" },
   { href: "/account", label: "Account" },
   { href: "/users", label: "Users" },
 ];
+
+const adminNavLinks = [...baseNavLinks, { href: "/updates", label: "Updates" }];
 
 const linkStyle = {
   color: "#FFF",
@@ -33,14 +36,22 @@ const loginButtonTextStyle = { ...linkStyle, color: "#FBFE27" };
 type HeaderProps = {
   /** When true, shows logo on desktop (left side) for inner pages like login. Mobile unchanged. */
   variant?: "landing" | "withLogo";
+  /** When true, shows admin-only nav links (e.g. Updates). Backend will control visibility later. */
+  showAdminLinks?: boolean;
 };
 
-export function Header({ variant = "landing" }: HeaderProps) {
+export function Header({ variant = "landing", showAdminLinks = false }: HeaderProps) {
+  const router = useRouter();
+  const supabase = React.useMemo(() => createClient(), []);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isAuthLoading, setIsAuthLoading] = React.useState(true);
+  const [isSigningOut, setIsSigningOut] = React.useState(false);
   const pathname = usePathname();
   const showLogoOnDesktop = variant === "withLogo";
 
   const isActive = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(href));
+  const navLinks = showAdminLinks ? adminNavLinks : baseNavLinks;
 
   React.useEffect(() => {
     if (typeof document === "undefined") return;
@@ -49,6 +60,38 @@ export function Header({ variant = "landing" }: HeaderProps) {
       document.body.style.overflow = "";
     };
   }, [mobileOpen]);
+
+  React.useEffect(() => {
+    let isActive = true;
+
+    const loadAuthState = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!isActive) return;
+      setIsAuthenticated(Boolean(data.user));
+      setIsAuthLoading(false);
+    };
+
+    loadAuthState();
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(Boolean(session?.user));
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      isActive = false;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const handleLogout = async () => {
+    setIsSigningOut(true);
+    await supabase.auth.signOut();
+    setIsSigningOut(false);
+    setMobileOpen(false);
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <header className="z-50 w-full bg-black px-4 py-4 md:bg-transparent md:px-6">
@@ -87,33 +130,41 @@ export function Header({ variant = "landing" }: HeaderProps) {
             showLogoOnDesktop && "min-[730px]:justify-center"
           )}
         >
-        {/* Nav bar - black on mobile. Desktop: exact spec for both variants. */}
+        {/* Nav bar - black on mobile. Desktop: exact spec. Wider (54rem) when admin links shown for 6 items. */}
         <div
           className={cn(
             "relative overflow-hidden",
             "rounded-[1.58331rem] border-[1.333px] border-white/[0.05] backdrop-blur-[13.33px]",
             "bg-black min-[730px]:bg-[#141414]",
             showLogoOnDesktop
-              ? "min-[730px]:w-full min-[730px]:max-w-[46.25rem] min-[730px]:flex min-[730px]:flex-1"
+              ? "min-[730px]:w-full min-[730px]:flex min-[730px]:flex-1"
               : "min-[730px]:flex min-[730px]:flex-col min-[730px]:items-center min-[730px]:justify-center min-[730px]:w-[46.25rem] min-[730px]:max-w-[46.25rem]",
+            showLogoOnDesktop && (showAdminLinks ? "min-[730px]:max-w-[54rem]" : "min-[730px]:max-w-[46.25rem]"),
             "max-[729px]:border-0 max-[729px]:rounded-xl max-[729px]:bg-transparent max-[729px]:backdrop-blur-0"
           )}
         >
-          <div
-            className={cn(
-              "flex items-center justify-between p-0 min-[730px]:gap-6 w-full min-[730px]:flex-row min-[730px]:p-[0.83331rem_0.83581rem] min-[730px]:self-stretch min-[730px]:box-border"
-            )}
+            <div
+              className={cn(
+                "flex items-center justify-between p-0 w-full min-[730px]:flex-row min-[730px]:self-stretch min-[730px]:box-border",
+                showAdminLinks ? "min-[730px]:gap-3 min-[730px]:px-4 min-[730px]:py-3" : "min-[730px]:gap-6 min-[730px]:p-[0.83331rem_0.83581rem]"
+              )}
             style={showLogoOnDesktop ? { minHeight: "5.02083rem" } : undefined}
           >
             <nav
-              className="hidden min-w-0 flex-1 items-center justify-center gap-6 min-[730px]:flex"
+              className={cn(
+                "hidden min-w-0 flex-1 items-center justify-center min-[730px]:flex",
+                showAdminLinks ? "gap-3" : "gap-6"
+              )}
               aria-label="Main"
             >
               {navLinks.map(({ href, label }) => (
                 <Link
                   key={href}
                   href={href}
-                  className="whitespace-nowrap shrink-0 font-light text-[#FFF] transition-colors hover:text-escobets-yellow hover:font-bold active:text-escobets-yellow active:font-bold"
+                  className={cn(
+                    "whitespace-nowrap shrink-0 font-light transition-colors hover:text-escobets-yellow hover:font-bold active:text-escobets-yellow active:font-bold",
+                    isActive(href) ? "text-escobets-yellow font-bold" : "text-[#FFF]"
+                  )}
                   style={showLogoOnDesktop ? navLinkStyle : navLinkStyleCompact}
                 >
                   {label}
@@ -123,19 +174,32 @@ export function Header({ variant = "landing" }: HeaderProps) {
 
             <div className="flex shrink-0 items-center gap-2 min-[730px]:items-stretch max-[729px]:ml-auto">
               <div className="hidden min-[730px]:block">
-                <Button
-                  variant="outline"
-                  asChild
-                  className="h-full min-h-0 box-border flex max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
-                >
-                  <Link
-                    href="/login"
-                    className="flex h-full w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"
+                {isAuthenticated ? (
+                  <Button
+                    variant="outline"
+                    onClick={handleLogout}
+                    disabled={isSigningOut}
+                    className="h-full min-h-0 box-border flex max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
                     style={loginButtonTextStyle}
                   >
-                    Log In
-                  </Link>
-                </Button>
+                    {isSigningOut ? "Logging out..." : "Log Out"}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    asChild
+                    disabled={isAuthLoading}
+                    className="h-full min-h-0 box-border flex max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
+                  >
+                    <Link
+                      href="/login"
+                      className="flex h-full w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"
+                      style={loginButtonTextStyle}
+                    >
+                      Log In
+                    </Link>
+                  </Button>
+                )}
               </div>
               <button
                 type="button"
@@ -188,20 +252,33 @@ export function Header({ variant = "landing" }: HeaderProps) {
               </Link>
             ))}
             <div className="mt-4 pt-4 border-t border-white/10">
-              <Button
-                variant="outline"
-                asChild
-                className="box-border flex w-full max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
-              >
-                <Link
-                  href="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"
+              {isAuthenticated ? (
+                <Button
+                  variant="outline"
+                  onClick={handleLogout}
+                  disabled={isSigningOut}
+                  className="box-border flex w-full max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
                   style={loginButtonTextStyle}
                 >
-                  Log In
-                </Link>
-              </Button>
+                  {isSigningOut ? "Logging out..." : "Log Out"}
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  asChild
+                  disabled={isAuthLoading}
+                  className="box-border flex w-full max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
+                >
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"
+                    style={loginButtonTextStyle}
+                  >
+                    Log In
+                  </Link>
+                </Button>
+              )}
             </div>
           </nav>
         </div>

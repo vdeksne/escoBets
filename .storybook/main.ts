@@ -33,12 +33,13 @@ const config: StorybookConfig = {
           "@": path.resolve(__dirname, "../src"),
           "next/link": path.resolve(__dirname, "next-link-stub.tsx"),
           "next/image": path.resolve(__dirname, "next-image-stub.tsx"),
+          "next/navigation": path.resolve(__dirname, "next-navigation-stub.ts"),
         },
       },
       // Prevent Vite from pre-bundling next/image so our alias is used (avoids "process is not defined")
       optimizeDeps: {
         ...config.optimizeDeps,
-        exclude: [...(config.optimizeDeps?.exclude ?? []), "next", "next/image"],
+        exclude: [...(config.optimizeDeps?.exclude ?? []), "next", "next/image", "next/navigation"],
         include: [...(config.optimizeDeps?.include ?? []), "react", "react-dom"],
       },
     };

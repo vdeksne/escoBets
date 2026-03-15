@@ -11,6 +11,8 @@ interface NewsArticleCardProps {
   size?: "large" | "medium" | "small";
   /** When true, image fills card and text overlays on top (like climate/featured block) */
   featured?: boolean;
+  /** When true, image gets priority loading (for LCP / above-the-fold images) */
+  priority?: boolean;
   className?: string;
 }
 
@@ -18,6 +20,7 @@ export function NewsArticleCard({
   article,
   size = "medium",
   featured = false,
+  priority = false,
   className,
 }: NewsArticleCardProps) {
   if (featured) {
@@ -35,6 +38,7 @@ export function NewsArticleCard({
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           sizes="(min-width: 1024px) 50vw, 100vw"
+          priority={priority}
         />
         <div
           className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"
@@ -89,6 +93,7 @@ export function NewsArticleCard({
           alt=""
           fill
           className="object-cover transition-transform group-hover:scale-105"
+          priority={priority}
           sizes={
             size === "large"
               ? "(min-width: 1024px) 50vw, 100vw"

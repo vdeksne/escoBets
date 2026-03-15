@@ -30,7 +30,7 @@ export function NewsGrid({
       <div className="grid gap-4 lg:grid-cols-2 lg:grid-rows-2 lg:items-stretch">
         {a && (
           <div className="lg:row-span-2 lg:min-h-0">
-            <NewsArticleCard article={a} size="large" featured className="h-full" />
+            <NewsArticleCard article={a} size="large" featured priority className="h-full" />
           </div>
         )}
         <div className="flex flex-col gap-4 lg:row-span-2">

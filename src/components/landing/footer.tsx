@@ -17,8 +17,8 @@ export function Footer() {
             style={{ width: "auto", height: "auto" }}
           />
         </Link>
-        <p className="text-sm text-escobets-yellow/80">
-          © 2026 Escobets. All rights reserved.
+        <p className="text-sm text-white">
+          © <span className="text-escobets-yellow">2026</span> Escobets. All rights reserved.
         </p>
       </div>
     </footer>

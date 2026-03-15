@@ -2,10 +2,12 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const socialIcons: Array<{
@@ -20,8 +22,35 @@ const socialIcons: Array<{
 ];
 
 export function LoginForm({ className }: { className?: string }) {
+  const router = useRouter();
+  const supabase = React.useMemo(() => createClient(), []);
   const [showPassword, setShowPassword] = React.useState(false);
   const [remember, setRemember] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    router.push("/account");
+    router.refresh();
+  };
 
   return (
     <div
@@ -44,20 +73,26 @@ export function LoginForm({ className }: { className?: string }) {
         Glad you&apos;re back
       </p>
 
-      <form className="mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4" onSubmit={(e) => e.preventDefault()}>
+      <form className="mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4" onSubmit={handleSubmit}>
         <Input
-          type="text"
-          placeholder="Username"
-          autoComplete="username"
-          aria-label="Username"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="Email"
+          autoComplete="email"
+          aria-label="Email"
+          required
           className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
         />
         <div className="relative">
           <Input
             type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
             placeholder="Password"
             autoComplete="current-password"
             aria-label="Password"
+            required
             className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
           />
           <button
@@ -83,9 +118,14 @@ export function LoginForm({ className }: { className?: string }) {
           Remember me
         </label>
 
-        <Button type="submit" className="w-full rounded-[0.83331rem]">
-          Login
+        <Button type="submit" className="w-full rounded-[0.83331rem]" disabled={isSubmitting}>
+          {isSubmitting ? "Logging in..." : "Login"}
         </Button>
+        {errorMessage ? (
+          <p className="text-sm text-red-300" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
       </form>
 
       <p className="mt-3 sm:mt-4 text-center">

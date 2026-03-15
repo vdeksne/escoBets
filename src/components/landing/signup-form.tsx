@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const socialIcons: Array<{
@@ -19,8 +20,51 @@ const socialIcons: Array<{
 ];
 
 export function SignupForm({ className }: { className?: string }) {
+  const supabase = React.useMemo(() => createClient(), []);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+  const [username, setUsername] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username,
+        },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+
+    setSuccessMessage(
+      "Signup successful. Check your email to confirm your account before logging in."
+    );
+  };
 
   return (
     <div
@@ -43,27 +87,36 @@ export function SignupForm({ className }: { className?: string }) {
         Create your account
       </p>
 
-      <form className="mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4" onSubmit={(e) => e.preventDefault()}>
+      <form className="mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4" onSubmit={handleSubmit}>
         <Input
           type="text"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
           placeholder="Username"
           autoComplete="username"
           aria-label="Username"
+          required
           className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
         />
         <Input
-          type="text"
-          placeholder="Email / Phone"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="Email"
           autoComplete="email"
-          aria-label="Email or Phone"
+          aria-label="Email"
+          required
           className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
         />
         <div className="relative">
           <Input
             type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
             placeholder="Password"
             autoComplete="new-password"
             aria-label="Password"
+            required
             className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
           />
           <button
@@ -82,9 +135,12 @@ export function SignupForm({ className }: { className?: string }) {
         <div className="relative">
           <Input
             type={showConfirmPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
             placeholder="Confirm Password"
             autoComplete="new-password"
             aria-label="Confirm Password"
+            required
             className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
           />
           <button
@@ -101,9 +157,19 @@ export function SignupForm({ className }: { className?: string }) {
           </button>
         </div>
 
-        <Button type="submit" className="w-full rounded-[0.83331rem]">
-          Signup
+        <Button type="submit" className="w-full rounded-[0.83331rem]" disabled={isSubmitting}>
+          {isSubmitting ? "Signing up..." : "Signup"}
         </Button>
+        {errorMessage ? (
+          <p className="text-sm text-red-300" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
+        {successMessage ? (
+          <p className="text-sm text-green-300" role="status">
+            {successMessage}
+          </p>
+        ) : null}
       </form>
 
       <div className="relative my-4 sm:my-6 flex items-center">
