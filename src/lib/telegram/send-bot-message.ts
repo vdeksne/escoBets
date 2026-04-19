@@ -4,12 +4,16 @@
  */
 export async function sendTelegramBotMessage(
   chatId: string,
-  text: string
+  text: string,
+  options?: { disableWebPagePreview?: boolean }
 ): Promise<{ ok: true } | { ok: false; description: string }> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
     return { ok: false, description: "TELEGRAM_BOT_TOKEN is not configured." };
   }
+
+  /** Default true: Telegram’s link preview can HTTP-fetch URLs and burn one-time tokens (e.g. Supabase recovery). */
+  const disableWebPagePreview = options?.disableWebPagePreview !== false;
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -17,7 +21,7 @@ export async function sendTelegramBotMessage(
     body: JSON.stringify({
       chat_id: chatId,
       text,
-      disable_web_page_preview: false,
+      disable_web_page_preview: disableWebPagePreview,
     }),
   });
 

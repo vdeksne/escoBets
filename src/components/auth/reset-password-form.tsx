@@ -48,9 +48,18 @@ export function ResetPasswordForm({ className }: { className?: string }) {
         const errCode = hashParams.get("error_code") ?? url.searchParams.get("error_code");
         if (err || errCode === "otp_expired") {
           if (!cancelled) {
+            const expiredLike =
+              errCode === "otp_expired" ||
+              errDesc?.toLowerCase().includes("expired") ||
+              errDesc?.toLowerCase().includes("invalid");
             setErrorMessage(
-              errDesc ||
-                "This reset link is invalid or has expired. Request a new one from Forgot password."
+              expiredLike
+                ? [
+                    errDesc ||
+                      "This reset link was already used or is no longer valid.",
+                    "If it was sent in Telegram, an automatic link preview can open the URL before you tap it and invalidate the link. Request a new reset and open the link in your browser (copy URL or long-press → Open).",
+                  ].join(" ")
+                : errDesc || "This reset link is invalid. Request a new one from Forgot password or your account settings."
             );
             setPhase("error");
           }
@@ -167,11 +176,11 @@ export function ResetPasswordForm({ className }: { className?: string }) {
           {errorMessage}
         </p>
         <p className="mt-5 text-center font-gotham text-sm text-white">
-          <Link href="/forgot-password" className="text-escobets-yellow hover:underline">
+          <Link prefetch={false} href="/forgot-password" className="text-escobets-yellow hover:underline">
             Request a new reset link
           </Link>
           {" · "}
-          <Link href="/login" className="text-escobets-yellow hover:underline">
+          <Link prefetch={false} href="/login" className="text-escobets-yellow hover:underline">
             Back to login
           </Link>
         </p>
@@ -257,7 +266,7 @@ export function ResetPasswordForm({ className }: { className?: string }) {
       </form>
 
       <p className="mt-5 text-center font-gotham text-sm text-white">
-        <Link href="/login" className="text-escobets-yellow hover:underline">
+        <Link prefetch={false} href="/login" className="text-escobets-yellow hover:underline">
           Back to login
         </Link>
       </p>
