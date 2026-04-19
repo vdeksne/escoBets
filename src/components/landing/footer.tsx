@@ -7,7 +7,7 @@ export function Footer() {
       <div className="container mx-auto flex flex-col items-center gap-10 text-center">
         {/* Separator line first */}
         <div className="w-full max-w-2xl border-t border-white/20" />
-        <Link href="/" aria-label="EscoBets home">
+        <Link prefetch={false} href="/" aria-label="EscoBets home">
           <Image
             src="/images/EscoBets_Logo.svg"
             alt="EscoBets"

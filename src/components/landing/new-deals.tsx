@@ -35,6 +35,7 @@ export function NewDeals() {
         <div className="grid gap-6 md:grid-cols-3">
           {deals.map((deal, i) => (
             <Link
+              prefetch={false}
               key={i}
               href="/deals"
               className="group overflow-hidden rounded-xl border border-white/10 bg-escobets-gray-card transition hover:border-escobets-yellow/50"

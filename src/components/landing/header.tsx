@@ -103,6 +103,7 @@ export function Header({ variant = "landing", showAdminLinks = false }: HeaderPr
       >
         {/* Logo - hidden on desktop for landing; shown for withLogo. Hidden when mobile menu open. */}
         <Link
+          prefetch={false}
           href="/"
           className={cn(
             "flex shrink-0 items-center transition-opacity duration-200",
@@ -159,6 +160,7 @@ export function Header({ variant = "landing", showAdminLinks = false }: HeaderPr
             >
               {navLinks.map(({ href, label }) => (
                 <Link
+                  prefetch={false}
                   key={href}
                   href={href}
                   className={cn(
@@ -192,6 +194,7 @@ export function Header({ variant = "landing", showAdminLinks = false }: HeaderPr
                     className="h-full min-h-0 box-border flex max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
                   >
                     <Link
+                      prefetch={false}
                       href="/login"
                       className="flex h-full w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"
                       style={loginButtonTextStyle}
@@ -239,6 +242,7 @@ export function Header({ variant = "landing", showAdminLinks = false }: HeaderPr
           >
             {navLinks.map(({ href, label }) => (
               <Link
+                prefetch={false}
                 key={href}
                 href={href}
                 onClick={() => setMobileOpen(false)}
@@ -270,6 +274,7 @@ export function Header({ variant = "landing", showAdminLinks = false }: HeaderPr
                   className="box-border flex w-full max-w-[46.08331rem] flex-col items-start justify-center rounded-[0.83331rem] border-[1.333px] border-[#FBFE27] bg-transparent py-1 px-7 hover:bg-[#FBFE27]/10"
                 >
                   <Link
+                    prefetch={false}
                     href="/login"
                     onClick={() => setMobileOpen(false)}
                     className="flex w-full min-w-0 flex-col items-start justify-center rounded-[0.83331rem] font-normal"

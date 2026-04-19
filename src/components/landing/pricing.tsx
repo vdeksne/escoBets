@@ -121,7 +121,9 @@ export function Pricing() {
                 className="mt-6 w-full rounded-[0.83331rem] border-2 border-escobets-yellow"
                 asChild
               >
-                <Link href="/subscription">Get Started</Link>
+                <Link prefetch={false} href="/subscription">
+                  Get Started
+                </Link>
               </Button>
             </div>
 
@@ -173,6 +175,7 @@ export function Pricing() {
             See how we can work for you.
           </p>
           <Link
+            prefetch={false}
             href="/demo"
             className="flex items-center gap-0 overflow-hidden rounded-xl border border-white/10 bg-[#1a1a1a] px-1 py-1 pr-5 transition-colors hover:border-white/20 hover:bg-[#222]"
           >

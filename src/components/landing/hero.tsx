@@ -118,7 +118,9 @@ export function Hero() {
           High-Confidence Picks. Proven Data. Real Results.
         </p>
         <Button variant="outline" size="lg" className="mb-6" asChild>
-          <Link href="/subscribe">Join Now</Link>
+          <Link prefetch={false} href="/subscribe">
+            Join Now
+          </Link>
         </Button>
         <p className="text-sm text-white/70">
           Exclusive picks, detailed analysis, and transparent profit/loss
