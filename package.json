@@ -10,13 +10,17 @@
     "storybook": "storybook dev -p 6006",
     "storybook:dev:wait": "storybook dev -p 6006 --no-open",
     "storybook:clean": "rm -rf node_modules/.cache/storybook node_modules/.vite storybook-static",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "db:login": "npx supabase@latest login",
+    "db:link": "npx supabase@latest link --project-ref ljwvujxgobnynomrmnyv",
+    "db:push": "npx supabase@latest db push"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.0",
+    "@radix-ui/react-popover": "^1.1.15",
     "@radix-ui/react-slot": "^1.1.0",
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.45.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.3",
     "@tiptap/extension-image": "^3.20.0",
     "@tiptap/extension-link": "^3.20.0",
     "@tiptap/extension-placeholder": "^3.20.0",
@@ -27,9 +31,11 @@
     "@tiptap/starter-kit": "^3.20.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "lucide-react": "^0.460.0",
     "next": "^15.0.3",
     "react": "^19.0.0",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.7.0",
     "tailwind-merge": "^2.5.4"

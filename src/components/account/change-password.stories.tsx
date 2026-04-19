@@ -17,7 +17,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onSave: (data) => console.log("Save password:", data),
+    onSave: async (data) => console.log("Save password:", data),
   },
   decorators: [
     (Story) => (

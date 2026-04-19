@@ -19,10 +19,12 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     profile: MOCK_PROFILE,
-    onSavePassword: (data) => console.log("Save password:", data),
+    onSavePassword: async (data) => {
+      console.log("Save password:", data);
+    },
     onSaveProfile: (data) => console.log("Save profile:", data),
-    onUploadAvatar: () => console.log("Upload avatar"),
-    onDeleteAvatar: () => console.log("Delete avatar"),
+    onUploadAvatar: async (file) => console.log("Upload avatar:", file.name),
+    onDeleteAvatar: async () => console.log("Delete avatar"),
   },
   decorators: [
     (Story) => (
@@ -39,10 +41,10 @@ export const FullPage: Story = {
   },
   args: {
     profile: MOCK_PROFILE,
-    onSavePassword: () => {},
+    onSavePassword: async () => {},
     onSaveProfile: () => {},
-    onUploadAvatar: () => {},
-    onDeleteAvatar: () => {},
+    onUploadAvatar: async () => {},
+    onDeleteAvatar: async () => {},
   },
   decorators: [
     (Story) => (

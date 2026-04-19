@@ -20,8 +20,8 @@ export const Default: Story = {
   args: {
     profile: MOCK_PROFILE,
     onSubmit: (data) => console.log("Submit:", data),
-    onUploadAvatar: () => console.log("Upload"),
-    onDeleteAvatar: () => console.log("Delete"),
+    onUploadAvatar: async (file) => console.log("Upload:", file.name),
+    onDeleteAvatar: async () => console.log("Delete"),
   },
   decorators: [
     (Story) => (

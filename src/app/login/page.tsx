@@ -3,7 +3,21 @@ import { Footer } from "@/components/landing/footer";
 import { LoginForm } from "@/components/landing/login-form";
 import { VideoBackground } from "@/components/landing/video-background";
 
-export default function LoginPage() {
+function safeNextPath(raw: string | string[] | undefined): string {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (!v || !v.startsWith("/") || v.startsWith("//")) return "/account";
+  return v;
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; error?: string }>;
+}) {
+  const sp = await searchParams;
+  const oauthNextPath = safeNextPath(sp.next);
+  const initialOAuthError = typeof sp.error === "string" ? sp.error : null;
+
   return (
     <div className="flex min-h-screen flex-col bg-black">
       <Header variant="withLogo" />
@@ -11,7 +25,11 @@ export default function LoginPage() {
       {/* Mobile: form on top, video section below so ball is visible */}
       <div className="relative flex flex-1 flex-col md:hidden">
         <main className="relative flex flex-col items-center px-4 pt-6 pb-4 shrink-0">
-          <LoginForm className="relative z-10" />
+          <LoginForm
+            className="relative z-10"
+            oauthNextPath={oauthNextPath}
+            initialOAuthError={initialOAuthError}
+          />
         </main>
         {/* Video section - ball visible under the form */}
         <div className="relative min-h-[20vh] flex-1 flex flex-col">
@@ -38,7 +56,11 @@ export default function LoginPage() {
           aria-hidden
         />
         <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-12">
-          <LoginForm className="relative z-10" />
+          <LoginForm
+            className="relative z-10"
+            oauthNextPath={oauthNextPath}
+            initialOAuthError={initialOAuthError}
+          />
         </main>
       </div>
 

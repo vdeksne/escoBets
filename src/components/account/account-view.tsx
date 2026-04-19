@@ -10,10 +10,10 @@ import { cn } from "@/lib/utils";
 
 interface AccountViewProps {
   profile: Profile;
-  onSavePassword?: (data: { current: string; new: string; confirm: string }) => void;
-  onSaveProfile?: (data: Partial<Profile>) => void;
-  onUploadAvatar?: () => void;
-  onDeleteAvatar?: () => void;
+  onSavePassword?: (data: { current: string; new: string; confirm: string }) => void | Promise<void>;
+  onSaveProfile?: (data: Partial<Profile>) => void | Promise<void>;
+  onUploadAvatar?: (file: File) => void | Promise<void>;
+  onDeleteAvatar?: () => void | Promise<void>;
   className?: string;
 }
 
@@ -27,31 +27,29 @@ export function AccountView({
 }: AccountViewProps) {
   return (
     <div className={cn("space-y-8", className)}>
-      {/* Manage Subscription link - prominent */}
-      <Link
-        href="/account/subscription"
-        className="flex items-center gap-4 rounded-xl border border-white/10 bg-black/40 p-4 transition-colors hover:border-white/20"
-      >
-        <CreditCard className="h-10 w-10 shrink-0 text-escobets-yellow/80" />
-        <div className="flex-1 text-left">
-          <h2 className="font-gotham font-medium text-white">Manage Subscription</h2>
-          <p className="font-gotham text-sm text-white/60">
-            View plan, payment method, and invoices
-          </p>
-        </div>
-      </Link>
-
-      {/* Two-column layout: left + right */}
-      <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr]">
+      {/* Two equal columns, stretched to the same height on large screens */}
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-stretch">
         {/* Left column */}
-        <div className="space-y-6">
+        <div className="flex min-h-0 h-full flex-col gap-6">
           <ProfileCard
             profile={profile}
             onEdit={() => {}}
             onShare={() => {}}
             onAddSocial={() => {}}
           />
-          <ChangePassword onSave={onSavePassword} />
+          <Link
+            href="/account/subscription"
+            className="flex items-center gap-4 rounded-lg border border-white/10 bg-black/30 p-4 text-left transition-colors hover:border-white/25"
+          >
+            <CreditCard className="h-9 w-9 shrink-0 text-escobets-yellow/80" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="font-gotham font-medium text-white">Manage Subscription</p>
+              <p className="mt-0.5 font-gotham text-sm text-white/60">
+                View plan, payment method, and invoices
+              </p>
+            </div>
+          </Link>
+          <ChangePassword onSave={onSavePassword} className="min-h-0" />
         </div>
 
         {/* Right column */}
@@ -60,6 +58,7 @@ export function AccountView({
           onSubmit={onSaveProfile}
           onUploadAvatar={onUploadAvatar}
           onDeleteAvatar={onDeleteAvatar}
+          className="min-h-0 h-full"
         />
       </div>
     </div>

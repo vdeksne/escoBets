@@ -5,22 +5,12 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { validatePasswordStrength } from "@/lib/account/password-policy";
+import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
 import { cn } from "@/lib/utils";
-
-const socialIcons: Array<{
-  label: string;
-  char: string;
-  href: string;
-  icon?: boolean;
-}> = [
-  { label: "Google", char: "G", href: "#" },
-  { label: "Facebook", char: "f", href: "#" },
-  { label: "Instagram", char: "", href: "#", icon: true },
-];
+import type { ApiResponse } from "@/types/api";
 
 export function SignupForm({ className }: { className?: string }) {
-  const supabase = React.useMemo(() => createClient(), []);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -41,29 +31,42 @@ export function SignupForm({ className }: { className?: string }) {
       return;
     }
 
-    setIsSubmitting(true);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          username,
-        },
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
-    });
-
-    setIsSubmitting(false);
-
-    if (error) {
-      setErrorMessage(error.message);
+    const strength = validatePasswordStrength(password.trim());
+    if (!strength.ok) {
+      setErrorMessage(strength.message);
       return;
     }
 
-    setSuccessMessage(
-      "Signup successful. Check your email to confirm your account before logging in."
-    );
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password: password.trim(),
+          username,
+        }),
+      });
+
+      const json = (await response.json()) as ApiResponse<{ message: string }>;
+
+      if (!response.ok || !json || json.success === false) {
+        setErrorMessage(
+          json && json.success === false ? json.error.message : "Signup failed. Please try again."
+        );
+        return;
+      }
+
+      setSuccessMessage(json.data.message);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Signup failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -178,29 +181,7 @@ export function SignupForm({ className }: { className?: string }) {
         <div className="flex-grow border-t border-white/30" />
       </div>
 
-      <div className="flex justify-center gap-4">
-        {socialIcons.map(({ label, char: c, href, icon }) => (
-          <a
-            key={label}
-            href={href}
-            aria-label={`Sign up with ${label}`}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black border border-white/20 text-white hover:border-escobets-yellow hover:text-escobets-yellow"
-          >
-            {icon ? (
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden
-              >
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-              </svg>
-            ) : (
-              <span className="font-gotham text-sm font-medium">{c}</span>
-            )}
-          </a>
-        ))}
-      </div>
+      <OAuthSocialButtons nextPath="/account" />
 
       <p className="mt-5 sm:mt-6 text-center font-gotham text-sm text-white">
         Already Registered ?{" "}

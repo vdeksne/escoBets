@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: "EscoBets - Elite Telegram Betting Insights",
   description:
     "High-Confidence Picks. Proven Data. Real Results. Exclusive picks, detailed analysis, and transparent profit/loss tracking.",
+  icons: {
+    icon: [{ url: "/images/EscoBets_Logo.svg", type: "image/svg+xml" }],
+    shortcut: "/images/EscoBets_Logo.svg",
+  },
 };
 
 export default function RootLayout({

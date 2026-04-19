@@ -7,28 +7,62 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-const socialIcons: Array<{
-  label: string;
-  char: string;
-  href: string;
-  icon?: boolean;
-}> = [
-  { label: "Google", char: "G", href: "#" },
-  { label: "Facebook", char: "f", href: "#" },
-  { label: "Instagram", char: "", href: "#", icon: true },
-];
+/** Match mockup: 1.333px #FFF border, pill radius; glass fill (no solid grey). Yellow ring on focus. */
+const loginInputClassName =
+  "rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent text-white " +
+  "placeholder:text-white/80 transition-[border-color,box-shadow] duration-150 " +
+  "focus:border-escobets-yellow focus:outline-none " +
+  "focus:ring-2 focus:ring-escobets-yellow/35 focus:ring-offset-0";
 
-export function LoginForm({ className }: { className?: string }) {
+function oauthCallbackErrorMessage(code: string | undefined): string | null {
+  if (code === "oauth_exchange_failed") {
+    return "Social sign-in failed. Please try again.";
+  }
+  if (code === "missing_oauth_code") {
+    return "Sign-in was cancelled or incomplete.";
+  }
+  if (code === "telegram_invalid") {
+    return "Telegram sign-in could not be verified. Please try again.";
+  }
+  if (code === "telegram_not_configured") {
+    return "Telegram sign-in is not configured on the server.";
+  }
+  if (code === "telegram_session_failed") {
+    return "Could not start your session after Telegram. Please try again.";
+  }
+  if (code === "telegram_magiclink_failed") {
+    return "Telegram was verified, but creating a sign-in link failed (check server logs and Supabase Email/auth settings).";
+  }
+  if (code === "telegram_otp_failed") {
+    return "Telegram was verified, but the app could not attach your session (check server logs).";
+  }
+  return null;
+}
+
+export function LoginForm({
+  className,
+  oauthNextPath = "/account",
+  initialOAuthError,
+}: {
+  className?: string;
+  /** Post-login redirect for email login + OAuth (same-site path only). */
+  oauthNextPath?: string;
+  /** `error` query from `/auth/callback` redirect (e.g. `oauth_exchange_failed`). */
+  initialOAuthError?: string | null;
+}) {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
   const [showPassword, setShowPassword] = React.useState(false);
   const [remember, setRemember] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(() =>
+    oauthCallbackErrorMessage(initialOAuthError ?? undefined)
+  );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -48,7 +82,9 @@ export function LoginForm({ className }: { className?: string }) {
       return;
     }
 
-    router.push("/account");
+    const safeNext =
+      oauthNextPath.startsWith("/") && !oauthNextPath.startsWith("//") ? oauthNextPath : "/account";
+    router.push(safeNext);
     router.refresh();
   };
 
@@ -73,7 +109,10 @@ export function LoginForm({ className }: { className?: string }) {
         Glad you&apos;re back
       </p>
 
-      <form className="mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4" onSubmit={handleSubmit}>
+      <form
+        className="login-form mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4"
+        onSubmit={handleSubmit}
+      >
         <Input
           type="email"
           value={email}
@@ -82,7 +121,7 @@ export function LoginForm({ className }: { className?: string }) {
           autoComplete="email"
           aria-label="Email"
           required
-          className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+          className={loginInputClassName}
         />
         <div className="relative">
           <Input
@@ -93,7 +132,7 @@ export function LoginForm({ className }: { className?: string }) {
             autoComplete="current-password"
             aria-label="Password"
             required
-            className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+            className={cn(loginInputClassName, "pr-10")}
           />
           <button
             type="button"
@@ -143,29 +182,7 @@ export function LoginForm({ className }: { className?: string }) {
         <div className="flex-grow border-t border-white/30" />
       </div>
 
-      <div className="flex justify-center gap-4">
-        {socialIcons.map(({ label, char: c, href, icon }) => (
-          <a
-            key={label}
-            href={href}
-            aria-label={`Login with ${label}`}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-black border border-white/20 text-white hover:border-escobets-yellow hover:text-escobets-yellow"
-          >
-            {icon ? (
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden
-              >
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-              </svg>
-            ) : (
-              <span className="font-gotham text-sm font-medium">{c}</span>
-            )}
-          </a>
-        ))}
-      </div>
+      <OAuthSocialButtons nextPath={oauthNextPath} />
 
       <p className="mt-5 sm:mt-6 text-center font-gotham text-sm text-white">
         Don&apos;t have an account ?{" "}

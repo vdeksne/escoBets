@@ -52,3 +52,59 @@ body {
   -webkit-box-shadow: 0 0 0px 1000px #000 inset;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Keep profile form inputs dark with white text when browser autofills */
+.profile-form input:-webkit-autofill,
+.profile-form input:-webkit-autofill:hover,
+.profile-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.85) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Change password: autofill matches dark UI (no bright “selected” fill); focus ring stays yellow via Tailwind on the input */
+.change-password-form input:-webkit-autofill,
+.change-password-form input:-webkit-autofill:hover,
+.change-password-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(30, 30, 28, 0.92) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Login: autofill stays glass-like (avoid heavy grey fill); border stays from Tailwind */
+.login-form input:-webkit-autofill,
+.login-form input:-webkit-autofill:hover,
+.login-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(0, 0, 0, 0.06) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* react-day-picker (account DOB): dark glass + readable month/year caption */
+.date-of-birth-calendar.rdp-root {
+  color: #fff;
+}
+
+.date-of-birth-calendar .rdp-month_caption {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.date-of-birth-calendar .rdp-caption_label {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.date-of-birth-calendar .rdp-weekday {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.date-of-birth-calendar .rdp-nav_button {
+  color: #fff;
+}
+
+.date-of-birth-calendar .rdp-outside {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.date-of-birth-calendar .rdp-disabled {
+  color: rgba(255, 255, 255, 0.25);
+}
