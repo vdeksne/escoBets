@@ -50,12 +50,15 @@ export function LoginForm({
   className,
   oauthNextPath = "/account",
   initialOAuthError,
+  initialSuccessMessage,
 }: {
   className?: string;
   /** Post-login redirect for email login + OAuth (same-site path only). */
   oauthNextPath?: string;
   /** `error` query from `/auth/callback` redirect (e.g. `oauth_exchange_failed`). */
   initialOAuthError?: string | null;
+  /** e.g. after password reset from `/reset-password`. */
+  initialSuccessMessage?: string | null;
 }) {
   const router = useRouter();
   const [showPassword, setShowPassword] = React.useState(false);
@@ -65,14 +68,25 @@ export function LoginForm({
   const [errorMessage, setErrorMessage] = React.useState<string | null>(() =>
     oauthCallbackErrorMessage(initialOAuthError ?? undefined)
   );
+  const [successMessage, setSuccessMessage] = React.useState<string | null>(
+    () => initialSuccessMessage ?? null
+  );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  /** Remove `error` from the URL so refresh/bookmark is clean; message stays in state. */
+  /** Remove `error` / `message` from the URL so refresh/bookmark is clean; copy stays in state. */
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (!params.has("error")) return;
-    params.delete("error");
+    let changed = false;
+    if (params.has("error")) {
+      params.delete("error");
+      changed = true;
+    }
+    if (params.has("message")) {
+      params.delete("message");
+      changed = true;
+    }
+    if (!changed) return;
     const q = params.toString();
     const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
     window.history.replaceState(null, "", path);
@@ -81,6 +95,7 @@ export function LoginForm({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
+    setSuccessMessage(null);
     setIsSubmitting(true);
 
     try {
@@ -187,6 +202,11 @@ export function LoginForm({
         <Button type="submit" className="w-full rounded-[0.83331rem]" disabled={isSubmitting}>
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
+        {successMessage ? (
+          <p className="text-sm leading-snug text-green-300" role="status">
+            {successMessage}
+          </p>
+        ) : null}
         {errorMessage ? (
           <p
             className={cn(

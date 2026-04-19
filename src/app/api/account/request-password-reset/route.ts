@@ -61,7 +61,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
 
   const email = user.email;
   const origin = new URL(request.url).origin;
-  const loginUrl = `${origin}/login`;
+  const resetUrl = `${origin}/reset-password`;
   const supportXUrl = (process.env.NEXT_PUBLIC_SUPPORT_X_URL ?? "").trim() || null;
 
   const synthetic = isTelegramPlaceholderEmail(email);
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
   });
 
   if (!synthetic) {
-    const { error: resetErr } = await anon.auth.resetPasswordForEmail(email, { redirectTo: loginUrl });
+    const { error: resetErr } = await anon.auth.resetPasswordForEmail(email, { redirectTo: resetUrl });
     if (resetErr) {
       console.error("[request-password-reset] resetPasswordForEmail:", resetErr.message);
     } else {
