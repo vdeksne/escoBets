@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   isTelegramPlaceholderEmail,
+  readAvatarUrlFromUserMetadata,
   readTelegramUsernameFromUserMetadata,
 } from "@/lib/account/telegram-profile-email";
 import type { ApiError, ApiSuccess } from "@/types/api";
@@ -173,6 +174,8 @@ function toProfile(params: {
   email: string;
   row?: Record<string, unknown> | null;
   telegramUsername?: string | null;
+  /** Used when `profiles.avatar_url` is empty (e.g. Telegram OAuth photo only in auth metadata). */
+  authAvatarFallback?: string | undefined;
 }): Profile {
   const row = params.row ?? null;
 
@@ -219,6 +222,10 @@ function toProfile(params: {
     ? baseLinks.map((l) => (l.provider === "telegram" ? { ...l, linked: true } : l))
     : baseLinks;
 
+  const rowAvatarRaw = getOptionalString("avatar_url", "avatarUrl", "avatarurl");
+  const rowAvatar = rowAvatarRaw?.trim();
+  const avatarUrl = rowAvatar ? rowAvatar : params.authAvatarFallback;
+
   return {
     id: params.userId,
     telegramUsername: params.telegramUsername ?? null,
@@ -228,7 +235,7 @@ function toProfile(params: {
     phone: getString("phone"),
     dateOfBirth: getString("date_of_birth", "dateOfBirth", "dateofbirth"),
     address: normalizeAddressFromRow(row),
-    avatarUrl: getOptionalString("avatar_url", "avatarUrl", "avatarurl"),
+    avatarUrl,
     socialLinks,
   };
 }
@@ -256,6 +263,7 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
       email: user.email ?? "",
       row,
       telegramUsername: readTelegramUsernameFromUserMetadata(user),
+      authAvatarFallback: readAvatarUrlFromUserMetadata(user),
     })
   );
 }
@@ -359,6 +367,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       email: profileEmail,
       row,
       telegramUsername,
+      authAvatarFallback: readAvatarUrlFromUserMetadata(user),
     });
 
   const { data: dataSnake, error: errorSnake } = await tryUpsert(updateSnakeBase);

@@ -20,6 +20,20 @@ export function readTelegramUsernameFromUserMetadata(user: {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+/** Telegram Login passes `photo_url`; we store it on auth metadata as `avatar_url`. */
+export function readAvatarUrlFromUserMetadata(user: {
+  user_metadata?: Record<string, unknown> | null;
+}): string | undefined {
+  const v = user.user_metadata?.avatar_url;
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+/** True when `profiles.avatar_url` points at our Supabase Storage uploads (do not replace with Telegram). */
+export function isEscobetsStorageAvatarUrl(url: string | null | undefined): boolean {
+  if (!url || typeof url !== "string") return false;
+  return url.includes("/storage/v1/object/public/avatars/");
+}
+
 /** What to show instead of the raw synthetic email. */
 export function telegramAccountDisplayLines(params: {
   email: string;

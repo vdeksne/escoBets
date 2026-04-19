@@ -21,6 +21,32 @@ try {
   supabaseImageRemote = undefined;
 }
 
+/** Telegram Login `photo_url` is served from Telegram CDNs (not Supabase Storage). */
+const telegramAvatarRemotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+  "cdn.telegram-cdn.org",
+  "cdn1.telegram-cdn.org",
+  "cdn2.telegram-cdn.org",
+  "cdn3.telegram-cdn.org",
+  "cdn4.telegram-cdn.org",
+  "cdn5.telegram-cdn.org",
+].map((hostname) => ({
+  protocol: "https" as const,
+  hostname,
+  pathname: "/**" as const,
+}));
+telegramAvatarRemotePatterns.push({
+  protocol: "https",
+  hostname: "t.me",
+  pathname: "/**",
+});
+
+const mergedImages: NextConfig["images"] = {
+  remotePatterns: [
+    ...(supabaseImageRemote?.remotePatterns ?? []),
+    ...telegramAvatarRemotePatterns,
+  ],
+};
+
 const nextConfig: NextConfig = {
   // Ensure correct workspace root when multiple lockfiles exist
   outputFileTracingRoot: path.join(__dirname, "."),
@@ -30,7 +56,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [{ source: "/favicon.ico", destination: "/images/EscoBets_Logo.svg" }];
   },
-  ...(supabaseImageRemote ? { images: supabaseImageRemote } : {}),
+  images: mergedImages,
 };
 
 export default nextConfig;

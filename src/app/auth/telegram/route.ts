@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { verifyTelegramWidgetParams } from "@/lib/auth/verify-telegram-widget";
+import { isEscobetsStorageAvatarUrl } from "@/lib/account/telegram-profile-email";
 
 function safeNextPath(raw: string | null): string {
   if (!raw) return "/account";
@@ -87,14 +88,45 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const { error: verifyError } = await supabase.auth.verifyOtp({
+  const { data: otpData, error: verifyError } = await supabase.auth.verifyOtp({
     type: "magiclink",
     token_hash: hashed,
   });
 
-  if (verifyError) {
-    console.error("[auth/telegram] verifyOtp:", verifyError.message);
+  if (verifyError || !otpData.user) {
+    console.error("[auth/telegram] verifyOtp:", verifyError?.message ?? "no user");
     return loginRedirect(origin, "telegram_otp_failed");
+  }
+
+  const userId = otpData.user.id;
+
+  if (photo_url) {
+    const { data: existingRow } = await admin
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle();
+
+    const existingUrl =
+      existingRow &&
+      typeof (existingRow as { avatar_url?: unknown }).avatar_url === "string"
+        ? (existingRow as { avatar_url: string }).avatar_url
+        : "";
+
+    if (!isEscobetsStorageAvatarUrl(existingUrl)) {
+      const { error: profileError } = await admin.from("profiles").upsert(
+        {
+          id: userId,
+          avatar_url: photo_url,
+          first_name: first_name,
+          last_name: last_name ?? null,
+        },
+        { onConflict: "id" }
+      );
+      if (profileError) {
+        console.error("[auth/telegram] profiles upsert:", profileError.message);
+      }
+    }
   }
 
   return response;
