@@ -4,12 +4,16 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!token) {
-    return NextResponse.json({ error: "not_configured" }, { status: 503 });
+    // 200 avoids noisy browser console "503" on every load; client checks `ok`.
+    return NextResponse.json(
+      { ok: false as const, code: "telegram_token_missing" },
+      { status: 200 },
+    );
   }
   const colon = token.indexOf(":");
   const botId = colon > 0 ? token.slice(0, colon) : "";
   if (!/^\d+$/.test(botId)) {
-    return NextResponse.json({ error: "invalid_token" }, { status: 500 });
+    return NextResponse.json({ ok: false as const, code: "invalid_token" }, { status: 500 });
   }
-  return NextResponse.json({ botId });
+  return NextResponse.json({ ok: true as const, botId });
 }

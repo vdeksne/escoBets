@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  isTelegramPlaceholderEmail,
+  readTelegramUsernameFromUserMetadata,
+} from "@/lib/account/telegram-profile-email";
 import type { ApiError, ApiSuccess } from "@/types/api";
 import type { Profile, ProfileAddress, SocialLink } from "@/types/account";
 
@@ -168,6 +172,7 @@ function toProfile(params: {
   userId: string;
   email: string;
   row?: Record<string, unknown> | null;
+  telegramUsername?: string | null;
 }): Profile {
   const row = params.row ?? null;
 
@@ -208,17 +213,23 @@ function toProfile(params: {
   }
 
   const rowEmail = getString("email", "user_email", "userEmail");
+  const resolvedEmail = rowEmail || params.email;
+  const baseLinks = defaultSocialLinks();
+  const socialLinks = isTelegramPlaceholderEmail(resolvedEmail)
+    ? baseLinks.map((l) => (l.provider === "telegram" ? { ...l, linked: true } : l))
+    : baseLinks;
 
   return {
     id: params.userId,
-    email: rowEmail || params.email,
+    telegramUsername: params.telegramUsername ?? null,
+    email: resolvedEmail,
     firstName,
     lastName,
     phone: getString("phone"),
     dateOfBirth: getString("date_of_birth", "dateOfBirth", "dateofbirth"),
     address: normalizeAddressFromRow(row),
     avatarUrl: getOptionalString("avatar_url", "avatarUrl", "avatarurl"),
-    socialLinks: defaultSocialLinks(),
+    socialLinks,
   };
 }
 
@@ -244,6 +255,7 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
       userId: user.id,
       email: user.email ?? "",
       row,
+      telegramUsername: readTelegramUsernameFromUserMetadata(user),
     })
   );
 }
@@ -258,6 +270,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
   if (authError || !user) {
     return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
   }
+
+  const telegramUsername = readTelegramUsernameFromUserMetadata(user);
 
   let payload: ProfilePayload;
   try {
@@ -339,6 +353,14 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
     return null;
   };
 
+  const profileFromRow = (row: Record<string, unknown> | null) =>
+    toProfile({
+      userId: user.id,
+      email: profileEmail,
+      row,
+      telegramUsername,
+    });
+
   const { data: dataSnake, error: errorSnake } = await tryUpsert(updateSnakeBase);
   const rowSnake = firstRow(dataSnake);
 
@@ -375,38 +397,20 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       const { data: dataSnakeNoDob, error: errorSnakeNoDob } = await tryUpsert(snakeNoDob);
       const rowSnakeNoDob = firstRow(dataSnakeNoDob);
       if (!errorSnakeNoDob && rowSnakeNoDob) {
-        return successResponse(
-          toProfile({
-            userId: user.id,
-            email: profileEmail,
-            row: rowSnakeNoDob,
-          })
-        );
+        return successResponse(profileFromRow(rowSnakeNoDob));
       }
 
       const { data: dataCamelNoDob, error: errorCamelNoDob } = await tryUpsert(camelNoDob);
       const rowCamelNoDob = firstRow(dataCamelNoDob);
       if (!errorCamelNoDob && rowCamelNoDob) {
-        return successResponse(
-          toProfile({
-            userId: user.id,
-            email: profileEmail,
-            row: rowCamelNoDob,
-          })
-        );
+        return successResponse(profileFromRow(rowCamelNoDob));
       }
 
       const legacy = updateLegacyStarter();
       const { data: dataLegacy, error: errorLegacy } = await tryUpsert(legacy);
       const rowLegacy = firstRow(dataLegacy);
       if (!errorLegacy && rowLegacy) {
-        return successResponse(
-          toProfile({
-            userId: user.id,
-            email: profileEmail,
-            row: rowLegacy,
-          })
-        );
+        return successResponse(profileFromRow(rowLegacy));
       }
 
       const { data: dataMinimal, error: errorMinimal } = await tryUpsert({
@@ -416,13 +420,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       });
       const rowMinimal = firstRow(dataMinimal);
       if (!errorMinimal && rowMinimal) {
-        return successResponse(
-          toProfile({
-            userId: user.id,
-            email: profileEmail,
-            row: rowMinimal,
-          })
-        );
+        return successResponse(profileFromRow(rowMinimal));
       }
 
       return errorResponse(
@@ -433,21 +431,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       );
     }
 
-    return successResponse(
-      toProfile({
-        userId: user.id,
-        email: profileEmail,
-        row: rowCamel,
-      })
-    );
+    return successResponse(profileFromRow(rowCamel));
   }
 
-  return successResponse(
-    toProfile({
-      userId: user.id,
-      email: profileEmail,
-      row: rowSnake,
-    })
-  );
+  return successResponse(profileFromRow(rowSnake));
 }
 

@@ -12,6 +12,7 @@ import {
   type ProfilePhoneCountryId,
 } from "@/lib/account/profile-phone";
 import { EMPTY_PROFILE_ADDRESS, type Profile, type ProfileAddress } from "@/types/account";
+import { isTelegramPlaceholderEmail } from "@/lib/account/telegram-profile-email";
 import { cn } from "@/lib/utils";
 
 /** MasterCard-style logo */
@@ -83,6 +84,8 @@ export function ProfileUpdateForm({
     ...EMPTY_PROFILE_ADDRESS,
     ...profile.address,
   }));
+
+  const telegramSignInEmail = isTelegramPlaceholderEmail(profile.email);
 
   React.useEffect(() => {
     setFirstName(profile.firstName);
@@ -314,7 +317,7 @@ export function ProfileUpdateForm({
           </div>
           <div className="sm:col-span-2">
             <label htmlFor="email" className="mb-0.5 block font-gotham text-sm text-white/70">
-              E-mail
+              {telegramSignInEmail ? "Sign-in email (Telegram)" : "E-mail"}
             </label>
             <input
               id="email"
@@ -322,8 +325,19 @@ export function ProfileUpdateForm({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={inputClassName}
+              readOnly={telegramSignInEmail}
+              aria-readonly={telegramSignInEmail || undefined}
+              className={cn(
+                inputClassName,
+                telegramSignInEmail && "cursor-default text-white/75"
+              )}
             />
+            {telegramSignInEmail ? (
+              <p className="mt-1.5 font-gotham text-xs leading-snug text-white/55">
+                Telegram does not share your personal email with websites. This value is a generated
+                sign-in identifier for your EscoBets account, not an inbox.
+              </p>
+            ) : null}
           </div>
           <div className="sm:col-span-2">
             <div className="grid gap-3 sm:grid-cols-2">

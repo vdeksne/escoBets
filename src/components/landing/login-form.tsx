@@ -18,6 +18,10 @@ const loginInputClassName =
   "focus:border-escobets-yellow focus:outline-none " +
   "focus:ring-2 focus:ring-escobets-yellow/35 focus:ring-offset-0";
 
+/** Shown after /auth/telegram redirect when server env is incomplete (e.g. Vercel). */
+const TELEGRAM_NOT_CONFIGURED_MESSAGE =
+  "Telegram login cannot run on this deployment yet. In your host (e.g. Vercel → Project → Settings → Environment Variables), set TELEGRAM_BOT_TOKEN, SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_URL, and NEXT_PUBLIC_SUPABASE_ANON_KEY, then redeploy.";
+
 function oauthCallbackErrorMessage(code: string | undefined): string | null {
   if (code === "oauth_exchange_failed") {
     return "Social sign-in failed. Please try again.";
@@ -29,7 +33,7 @@ function oauthCallbackErrorMessage(code: string | undefined): string | null {
     return "Telegram sign-in could not be verified. Please try again.";
   }
   if (code === "telegram_not_configured") {
-    return "Telegram sign-in is not configured on the server.";
+    return TELEGRAM_NOT_CONFIGURED_MESSAGE;
   }
   if (code === "telegram_session_failed") {
     return "Could not start your session after Telegram. Please try again.";
@@ -64,6 +68,17 @@ export function LoginForm({
     oauthCallbackErrorMessage(initialOAuthError ?? undefined)
   );
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  /** Remove `error` from the URL so refresh/bookmark is clean; message stays in state. */
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has("error")) return;
+    params.delete("error");
+    const q = params.toString();
+    const path = q ? `${window.location.pathname}?${q}` : window.location.pathname;
+    window.history.replaceState(null, "", path);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -161,7 +176,15 @@ export function LoginForm({
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
         {errorMessage ? (
-          <p className="text-sm text-red-300" role="alert">
+          <p
+            className={cn(
+              "text-sm leading-snug",
+              errorMessage === TELEGRAM_NOT_CONFIGURED_MESSAGE
+                ? "text-amber-200/90"
+                : "text-red-300"
+            )}
+            role={errorMessage === TELEGRAM_NOT_CONFIGURED_MESSAGE ? "status" : "alert"}
+          >
             {errorMessage}
           </p>
         ) : null}

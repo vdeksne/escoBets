@@ -4,6 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { Pencil, Share2, Copy, Plus, Send } from "lucide-react";
 import type { Profile } from "@/types/account";
+import { telegramAccountDisplayLines } from "@/lib/account/telegram-profile-email";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -79,6 +80,11 @@ export function ProfileCard({
 }: ProfileCardProps) {
   const [copied, setCopied] = React.useState(false);
 
+  const { primary: emailPrimary, secondary: emailSecondary } = telegramAccountDisplayLines({
+    email: profile.email,
+    telegramUsername: profile.telegramUsername,
+  });
+
   const copyEmail = () => {
     navigator.clipboard.writeText(profile.email);
     setCopied(true);
@@ -133,19 +139,29 @@ export function ProfileCard({
         <p className="mt-4 font-gotham text-lg font-bold text-white">
           {profile.firstName} {profile.lastName}
         </p>
-        <div className="mt-2 flex items-center gap-2">
-          <span className="font-gotham text-sm text-white/80">{profile.email}</span>
-          <button
-            type="button"
-            onClick={copyEmail}
-            className="text-white/60 hover:text-escobets-yellow"
-            aria-label="Copy email"
-          >
-            <Copy className="h-4 w-4" />
-          </button>
-          {copied && (
-            <span className="font-gotham text-xs text-escobets-yellow">Copied</span>
-          )}
+        <div className="mt-2 flex flex-col items-center gap-1">
+          <div className="flex items-center gap-2 text-center">
+            <span className="font-gotham text-sm font-medium text-white">{emailPrimary}</span>
+            <button
+              type="button"
+              onClick={copyEmail}
+              className="shrink-0 text-white/60 hover:text-escobets-yellow"
+              aria-label={
+                emailSecondary
+                  ? "Copy internal sign-in email (for support)"
+                  : "Copy email"
+              }
+              title={profile.email}
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+            {copied ? (
+              <span className="font-gotham text-xs text-escobets-yellow">Copied</span>
+            ) : null}
+          </div>
+          {emailSecondary ? (
+            <span className="font-gotham text-xs text-white/55">{emailSecondary}</span>
+          ) : null}
         </div>
       </div>
 

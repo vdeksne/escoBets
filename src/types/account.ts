@@ -29,6 +29,8 @@ export const EMPTY_PROFILE_ADDRESS: ProfileAddress = {
 export interface Profile {
   id: string;
   avatarUrl?: string;
+  /** From Supabase `user_metadata` when user signed in via Telegram widget. */
+  telegramUsername?: string | null;
   firstName: string;
   lastName: string;
   email: string;

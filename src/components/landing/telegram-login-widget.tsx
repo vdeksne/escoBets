@@ -83,6 +83,7 @@ function authDataToSearchParams(data: Record<string, unknown>): string {
 export function TelegramLoginWidget({ nextPath = "/account", className }: TelegramLoginWidgetProps) {
   const [botId, setBotId] = React.useState<string | null>(null);
   const [botIdLoaded, setBotIdLoaded] = React.useState(false);
+  const [tokenMissingOnServer, setTokenMissingOnServer] = React.useState(false);
   const [scriptReady, setScriptReady] = React.useState(false);
   const [scriptIssue, setScriptIssue] = React.useState<string | null>(null);
 
@@ -91,6 +92,14 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
     void (async () => {
       try {
         const res = await fetch("/api/auth/telegram/bot-id");
+        const json = (await res.json()) as {
+          ok?: boolean;
+          botId?: string;
+          code?: string;
+        };
+        if (!cancelled) {
+          setTokenMissingOnServer(false);
+        }
         if (!res.ok) {
           if (!cancelled) {
             setBotId(null);
@@ -98,14 +107,24 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
           }
           return;
         }
-        const json = (await res.json()) as { botId?: string };
+        if (json.ok === false && json.code === "telegram_token_missing") {
+          if (!cancelled) {
+            setBotId(null);
+            setTokenMissingOnServer(true);
+            setBotIdLoaded(true);
+          }
+          return;
+        }
         if (!cancelled) {
-          setBotId(json.botId && /^\d+$/.test(json.botId) ? json.botId : null);
+          const id =
+            json.ok === true && json.botId && /^\d+$/.test(json.botId) ? json.botId : null;
+          setBotId(id);
           setBotIdLoaded(true);
         }
       } catch {
         if (!cancelled) {
           setBotId(null);
+          setTokenMissingOnServer(false);
           setBotIdLoaded(true);
         }
       }
@@ -154,8 +173,9 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
     });
   }, [botId, nextPath]);
 
-  const disabledHint =
-    "Telegram sign-in: add TELEGRAM_BOT_TOKEN and SUPABASE_SERVICE_ROLE_KEY to .env.local, restart dev, and set your domain with @BotFather /setdomain.";
+  const disabledHint = tokenMissingOnServer
+    ? "Telegram sign-in: set TELEGRAM_BOT_TOKEN on the server (.env.local or hosting env), restart the app, and link the domain in @BotFather."
+    : "Telegram sign-in: add TELEGRAM_BOT_TOKEN and SUPABASE_SERVICE_ROLE_KEY to .env.local, restart dev, and set your domain with @BotFather /setdomain.";
 
   return (
     <div className="flex max-w-[11rem] flex-col items-center gap-1">
@@ -180,6 +200,12 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
         />
         {botIdLoaded && !botId ? <span className="sr-only">Telegram sign-in not configured</span> : null}
       </button>
+      {tokenMissingOnServer && !scriptIssue ? (
+        <p className="max-w-[11rem] text-center text-[11px] leading-snug text-muted-foreground">
+          Telegram login is off until <code className="text-[10px]">TELEGRAM_BOT_TOKEN</code> is set on the server and
+          the app is restarted.
+        </p>
+      ) : null}
       {scriptIssue ? (
         <p className="text-center text-[11px] leading-snug text-red-300/95" role="alert">
           {scriptIssue}
