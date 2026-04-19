@@ -3,7 +3,14 @@ import { Footer } from "@/components/landing/footer";
 import { ForgotPasswordForm } from "@/components/landing/forgot-password-form";
 import { VideoBackground } from "@/components/landing/video-background";
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const sp = await searchParams;
+  const fromAccount = sp.from === "account";
+
   return (
     <div className="flex min-h-screen flex-col bg-black">
       <Header variant="withLogo" />
@@ -11,7 +18,7 @@ export default function ForgotPasswordPage() {
       {/* Mobile: form on top, video section below so ball is visible */}
       <div className="relative flex flex-1 flex-col md:hidden">
         <main className="relative flex flex-col items-center px-4 pt-6 pb-4 shrink-0">
-          <ForgotPasswordForm className="relative z-10" />
+          <ForgotPasswordForm fromAccount={fromAccount} className="relative z-10" />
         </main>
         {/* Video section - ball visible under the form */}
         <div className="relative min-h-[20vh] flex-1 flex flex-col">
@@ -38,7 +45,7 @@ export default function ForgotPasswordPage() {
           aria-hidden
         />
         <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-12">
-          <ForgotPasswordForm className="relative z-10" />
+          <ForgotPasswordForm fromAccount={fromAccount} className="relative z-10" />
         </main>
       </div>
 

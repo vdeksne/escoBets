@@ -21,19 +21,103 @@ interface ChangePasswordProps {
   className?: string;
 }
 
+type ResetStatus =
+  | null
+  | {
+      variant: "success" | "error";
+      lines: string[];
+      xUrl?: string | null;
+    };
+
 export function ChangePassword({ onSave, className }: ChangePasswordProps) {
   const [showCurrent, setShowCurrent] = React.useState(false);
   const [showNew, setShowNew] = React.useState(false);
   const [showConfirm, setShowConfirm] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isRequestingReset, setIsRequestingReset] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [formSuccess, setFormSuccess] = React.useState<string | null>(null);
+  const [resetStatus, setResetStatus] = React.useState<ResetStatus>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const requestPasswordReset = React.useCallback(async () => {
+    setResetStatus(null);
+    setFormError(null);
+    setFormSuccess(null);
+    setIsRequestingReset(true);
+    try {
+      const res = await fetch("/api/account/request-password-reset", {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = (await res.json()) as
+        | {
+            success: true;
+            data: {
+              emailSent: boolean;
+              telegramSent: boolean;
+              telegramDetail?: string;
+              supportXUrl: string | null;
+            };
+          }
+        | {
+            success: false;
+            error: { message: string; details?: { supportXUrl?: string | null } };
+          };
+
+      if (res.ok && json.success) {
+        const { emailSent, telegramSent, telegramDetail, supportXUrl } = json.data;
+        const lines: string[] = [
+          "Supabase sends a secure reset link (not a new password in the email body).",
+        ];
+        if (emailSent) {
+          lines.push("Check your inbox for the password reset link from Supabase.");
+        } else if (telegramSent) {
+          lines.push(
+            "This account has no personal email on file — we sent the reset link to your Telegram from the EscoBets bot."
+          );
+        } else {
+          lines.push("We could not send a reset email for this account.");
+        }
+        if (telegramSent && emailSent) {
+          lines.push("We also sent the same reset link to your Telegram.");
+        }
+        if (!telegramSent && telegramDetail) {
+          lines.push(`Telegram: ${telegramDetail}`);
+        }
+        if (supportXUrl) {
+          lines.push("You can also contact support on X using the link below.");
+        }
+        setResetStatus({ variant: "success", lines, xUrl: supportXUrl });
+        return;
+      }
+
+      const xUrl =
+        json.success === false && json.error.details && "supportXUrl" in json.error.details
+          ? json.error.details.supportXUrl
+          : null;
+      const msg =
+        json.success === false ? json.error.message : "Could not send reset instructions.";
+      setResetStatus({
+        variant: "error",
+        lines: [msg],
+        xUrl: xUrl ?? null,
+      });
+    } catch {
+      setResetStatus({
+        variant: "error",
+        lines: ["Could not reach the server. Try again in a moment."],
+      });
+    } finally {
+      setIsRequestingReset(false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError(null);
     setFormSuccess(null);
+    setResetStatus(null);
 
     const form = e.currentTarget;
     const data = {
@@ -90,10 +174,12 @@ export function ChangePassword({ onSave, className }: ChangePasswordProps) {
         </h2>
         <button
           type="button"
-          className="flex items-center gap-1 font-gotham text-sm text-white/70 hover:text-white"
+          onClick={() => void requestPasswordReset()}
+          disabled={isRequestingReset}
+          className="flex items-center gap-1 font-gotham text-sm text-white/70 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-escobets-yellow disabled:opacity-50"
         >
-          <HelpCircle className="h-4 w-4" />
-          Need help
+          <HelpCircle className="h-4 w-4 shrink-0" aria-hidden />
+          {isRequestingReset ? "Sending…" : "Need help"}
         </button>
       </div>
 
@@ -120,12 +206,52 @@ export function ChangePassword({ onSave, className }: ChangePasswordProps) {
               {showCurrent ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
-          <Link
-            href="/forgot-password"
-            className="mt-1 block font-gotham text-sm text-escobets-yellow hover:underline"
+          <button
+            type="button"
+            onClick={() => void requestPasswordReset()}
+            disabled={isRequestingReset}
+            className="mt-1 block w-full text-left font-gotham text-sm text-escobets-yellow underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-escobets-yellow disabled:opacity-50"
           >
-            Forgot Current Password? Click here
-          </Link>
+            {isRequestingReset ? "Sending reset…" : "Forgot current password? Click here"}
+          </button>
+          {resetStatus ? (
+            <div
+              className={cn(
+                "mt-3 rounded-lg border px-3 py-2.5 font-gotham text-xs leading-snug sm:text-sm",
+                resetStatus.variant === "success"
+                  ? "border-green-400/40 bg-green-950/35 text-green-100"
+                  : "border-red-400/40 bg-red-950/30 text-red-100"
+              )}
+              role={resetStatus.variant === "success" ? "status" : "alert"}
+            >
+              <ul className="list-inside list-disc space-y-1">
+                {resetStatus.lines.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+              {resetStatus.xUrl ? (
+                <p className="mt-2">
+                  <Link
+                    href={resetStatus.xUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-escobets-yellow underline underline-offset-2 hover:opacity-90"
+                  >
+                    Open X (support)
+                  </Link>
+                </p>
+              ) : null}
+              <p className="mt-2 text-white/55">
+                <Link
+                  href="/forgot-password?from=account"
+                  className="text-escobets-yellow/95 underline-offset-2 hover:underline"
+                >
+                  Open forgot-password page
+                </Link>{" "}
+                if you prefer to type your email manually.
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div>

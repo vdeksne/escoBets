@@ -7,7 +7,14 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-export function ForgotPasswordForm({ className }: { className?: string }) {
+export function ForgotPasswordForm({
+  className,
+  fromAccount = false,
+}: {
+  className?: string;
+  /** When opened from the account “change password” flow, show a return link to `/account`. */
+  fromAccount?: boolean;
+}) {
   const supabase = React.useMemo(() => createClient(), []);
   const [email, setEmail] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -84,7 +91,16 @@ export function ForgotPasswordForm({ className }: { className?: string }) {
         ) : null}
       </form>
 
-      <p className="mt-5 sm:mt-6 text-center font-gotham text-sm text-white">
+      <p className="mt-4 text-center font-gotham text-sm text-white/80">
+        <Link
+          href={fromAccount ? "/account" : "/login"}
+          className="text-escobets-yellow hover:underline"
+        >
+          {fromAccount ? "Back to account" : "Back to login"}
+        </Link>
+      </p>
+
+      <p className="mt-4 text-center font-gotham text-sm text-white">
         Don&apos;t have an account ?{" "}
         <Link
           href="/signup"

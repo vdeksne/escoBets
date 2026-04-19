@@ -20,6 +20,16 @@ export function readTelegramUsernameFromUserMetadata(user: {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+/** Numeric Telegram user id from OAuth metadata, or null. */
+export function readTelegramIdFromUserMetadata(user: {
+  user_metadata?: Record<string, unknown> | null;
+}): string | null {
+  const v = user.user_metadata?.telegram_id;
+  if (typeof v === "number" && Number.isFinite(v)) return String(Math.trunc(v));
+  if (typeof v === "string" && /^\d+$/.test(v.trim())) return v.trim();
+  return null;
+}
+
 /** Telegram Login passes `photo_url`; we store it on auth metadata as `avatar_url`. */
 export function readAvatarUrlFromUserMetadata(user: {
   user_metadata?: Record<string, unknown> | null;
