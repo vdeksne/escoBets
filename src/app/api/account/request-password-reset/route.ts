@@ -98,6 +98,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
     const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
       type: "recovery",
       email,
+      options: {
+        /** Must match Auth redirect allow list; otherwise recovery opens Site URL (/) with hash errors. */
+        redirectTo: resetUrl,
+      },
     });
     const actionLink = pickActionLink(linkData);
     if (linkError || !actionLink) {
