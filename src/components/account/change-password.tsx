@@ -62,7 +62,16 @@ export function ChangePassword({ onSave, className }: ChangePasswordProps) {
           }
         | {
             success: false;
-            error: { message: string; details?: { supportXUrl?: string | null } };
+            error: {
+              message: string;
+              details?: {
+                supportXUrl?: string | null;
+                attemptedRedirectTo?: string;
+                supabaseEmailError?: string | null;
+                telegramDetail?: string | null;
+                synthetic?: boolean;
+              };
+            };
           };
 
       if (res.ok && json.success) {
@@ -92,15 +101,25 @@ export function ChangePassword({ onSave, className }: ChangePasswordProps) {
         return;
       }
 
-      const xUrl =
-        json.success === false && json.error.details && "supportXUrl" in json.error.details
-          ? json.error.details.supportXUrl
-          : null;
+      const d = json.success === false ? json.error.details : undefined;
+      const xUrl = d?.supportXUrl ?? null;
       const msg =
         json.success === false ? json.error.message : "Could not send reset instructions.";
+      const lines = [msg];
+      if (d?.supabaseEmailError) {
+        lines.push(`Supabase: ${d.supabaseEmailError}`);
+      }
+      if (d?.attemptedRedirectTo) {
+        lines.push(
+          `Add this exact URL to Supabase → Authentication → URL configuration → Redirect URLs: ${d.attemptedRedirectTo}`
+        );
+      }
+      if (d?.telegramDetail) {
+        lines.push(`Telegram: ${d.telegramDetail}`);
+      }
       setResetStatus({
         variant: "error",
-        lines: [msg],
+        lines,
         xUrl: xUrl ?? null,
       });
     } catch {

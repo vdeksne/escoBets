@@ -60,8 +60,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
   }
 
   const email = user.email;
-  const origin = new URL(request.url).origin;
-  const resetUrl = `${origin}/reset-password`;
+  const requestOrigin = new URL(request.url).origin;
+  /** Canonical site for recovery links (avoid preview-host mismatches with Supabase allow-list). */
+  const publicSite =
+    (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "").trim() || requestOrigin;
+  const resetUrl = `${publicSite}/reset-password`;
   const supportXUrl = (process.env.NEXT_PUBLIC_SUPPORT_X_URL ?? "").trim() || null;
 
   const synthetic = isTelegramPlaceholderEmail(email);
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
   let emailSent = false;
   let telegramSent = false;
   let telegramDetail: string | undefined;
+  let supabaseEmailError: string | null = null;
 
   const anon = createServiceClient(supabaseUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -77,6 +81,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
   if (!synthetic) {
     const { error: resetErr } = await anon.auth.resetPasswordForEmail(email, { redirectTo: resetUrl });
     if (resetErr) {
+      supabaseEmailError = resetErr.message;
       console.error("[request-password-reset] resetPasswordForEmail:", resetErr.message);
     } else {
       emailSent = true;
@@ -120,13 +125,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<ResponseB
   }
 
   if (!emailSent && !telegramSent) {
+    const details = {
+      supportXUrl,
+      attemptedRedirectTo: resetUrl,
+      supabaseEmailError: synthetic ? null : supabaseEmailError,
+      telegramDetail: telegramDetail ?? null,
+      synthetic,
+    };
     return errorResponse(
       422,
       "NO_CHANNEL",
       synthetic
-        ? "This account has no personal email. We could not send a reset link by Telegram — open your bot in Telegram and ensure SUPABASE_SERVICE_ROLE_KEY is set, or use Telegram login again."
-        : "We could not send a reset email. In Supabase: Authentication → Emails / SMTP, enable and configure outbound mail, and add this site URL to redirect allow-list for recovery links.",
-      { supportXUrl },
+        ? "This account has no personal email. We could not send a reset link by Telegram — open your bot in Telegram, set SUPABASE_SERVICE_ROLE_KEY on the server, or use Telegram login again."
+        : "We could not send a reset email and Telegram delivery did not succeed. Check the details below and Supabase Authentication → Emails / SMTP plus Redirect URLs.",
+      details,
     );
   }
 
