@@ -31,6 +31,8 @@ export interface Profile {
   avatarUrl?: string;
   /** From Supabase `user_metadata` when user signed in via Telegram widget. */
   telegramUsername?: string | null;
+  /** `profiles.user_name` — use with password on the login page. */
+  userName?: string;
   firstName: string;
   lastName: string;
   email: string;

@@ -12,7 +12,10 @@ import {
   type ProfilePhoneCountryId,
 } from "@/lib/account/profile-phone";
 import { EMPTY_PROFILE_ADDRESS, type Profile, type ProfileAddress } from "@/types/account";
-import { isTelegramPlaceholderEmail } from "@/lib/account/telegram-profile-email";
+import {
+  isTelegramPlaceholderEmail,
+  telegramAccountDisplayLines,
+} from "@/lib/account/telegram-profile-email";
 import { cn } from "@/lib/utils";
 
 /** MasterCard-style logo */
@@ -86,6 +89,12 @@ export function ProfileUpdateForm({
   }));
 
   const telegramSignInEmail = isTelegramPlaceholderEmail(profile.email);
+  const telegramSignInDisplay = telegramSignInEmail
+    ? telegramAccountDisplayLines({
+        email: profile.email,
+        telegramUsername: profile.telegramUsername,
+      })
+    : null;
 
   React.useEffect(() => {
     setFirstName(profile.firstName);
@@ -144,7 +153,7 @@ export function ProfileUpdateForm({
     const data: Partial<Profile> = {
       firstName,
       lastName,
-      email,
+      ...(telegramSignInEmail ? {} : { email }),
       phone: buildSavedPhone(phoneCountryId, phone),
       dateOfBirth,
       address: { ...address },
@@ -316,28 +325,50 @@ export function ProfileUpdateForm({
             </div>
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="email" className="mb-0.5 block font-gotham text-sm text-white/70">
-              {telegramSignInEmail ? "Sign-in email (Telegram)" : "E-mail"}
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              readOnly={telegramSignInEmail}
-              aria-readonly={telegramSignInEmail || undefined}
-              className={cn(
-                inputClassName,
-                telegramSignInEmail && "cursor-default text-white/75"
-              )}
-            />
             {telegramSignInEmail ? (
-              <p className="mt-1.5 font-gotham text-xs leading-snug text-white/55">
-                Telegram does not share your personal email with websites. This value is a generated
-                sign-in identifier for your EscoBets account, not an inbox.
-              </p>
-            ) : null}
+              <>
+                <p className="mb-0.5 font-gotham text-sm text-white/70">Sign-in</p>
+                <div
+                  className="rounded-lg border border-white/30 bg-black/30 px-4 py-3"
+                  role="group"
+                  aria-label="Telegram sign-in"
+                >
+                  <p className="font-gotham text-base font-medium text-white">
+                    {telegramSignInDisplay?.primary}
+                  </p>
+                  {telegramSignInDisplay?.secondary ? (
+                    <p className="mt-0.5 font-gotham text-sm text-white/60">
+                      {telegramSignInDisplay.secondary}
+                    </p>
+                  ) : null}
+                  {profile.userName ? (
+                    <p className="mt-2 font-gotham text-xs text-white/65">
+                      Password login: use username <span className="text-white">{profile.userName}</span>{" "}
+                      on the login page (set a password in account settings if you have not yet).
+                    </p>
+                  ) : (
+                    <p className="mt-2 font-gotham text-xs leading-snug text-white/50">
+                      Log in with your EscoBets username and password after you set a password.
+                      Telegram does not share a personal email with us.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <label htmlFor="email" className="mb-0.5 block font-gotham text-sm text-white/70">
+                  E-mail
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClassName}
+                />
+              </>
+            )}
           </div>
           <div className="sm:col-span-2">
             <div className="grid gap-3 sm:grid-cols-2">

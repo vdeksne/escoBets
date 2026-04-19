@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
-import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 /** Match mockup: 1.333px #FFF border, pill radius; glass fill (no solid grey). Yellow ring on focus. */
@@ -59,10 +58,9 @@ export function LoginForm({
   initialOAuthError?: string | null;
 }) {
   const router = useRouter();
-  const supabase = React.useMemo(() => createClient(), []);
   const [showPassword, setShowPassword] = React.useState(false);
   const [remember, setRemember] = React.useState(false);
-  const [email, setEmail] = React.useState("");
+  const [identifier, setIdentifier] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errorMessage, setErrorMessage] = React.useState<string | null>(() =>
     oauthCallbackErrorMessage(initialOAuthError ?? undefined)
@@ -85,22 +83,36 @@ export function LoginForm({
     setErrorMessage(null);
     setIsSubmitting(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const res = await fetch("/api/auth/password-sign-in", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          identifier: identifier.trim(),
+          password,
+        }),
+      });
+      const json = (await res.json()) as
+        | { success: true; data: { ok: true } }
+        | { success: false; error: { message: string } };
 
-    setIsSubmitting(false);
+      if (!res.ok || !json.success) {
+        setErrorMessage(
+          json.success === false ? json.error.message : "Invalid email or password."
+        );
+        return;
+      }
 
-    if (error) {
-      setErrorMessage(error.message);
-      return;
+      const safeNext =
+        oauthNextPath.startsWith("/") && !oauthNextPath.startsWith("//") ? oauthNextPath : "/account";
+      router.push(safeNext);
+      router.refresh();
+    } catch {
+      setErrorMessage("Could not reach the server. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const safeNext =
-      oauthNextPath.startsWith("/") && !oauthNextPath.startsWith("//") ? oauthNextPath : "/account";
-    router.push(safeNext);
-    router.refresh();
   };
 
   return (
@@ -129,12 +141,12 @@ export function LoginForm({
         onSubmit={handleSubmit}
       >
         <Input
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="Email"
-          autoComplete="email"
-          aria-label="Email"
+          type="text"
+          value={identifier}
+          onChange={(event) => setIdentifier(event.target.value)}
+          placeholder="Email or username"
+          autoComplete="username"
+          aria-label="Email or username"
           required
           className={loginInputClassName}
         />

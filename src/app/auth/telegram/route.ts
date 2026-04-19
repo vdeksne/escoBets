@@ -100,33 +100,51 @@ export async function GET(request: NextRequest) {
 
   const userId = otpData.user.id;
 
-  if (photo_url) {
-    const { data: existingRow } = await admin
-      .from("profiles")
-      .select("avatar_url")
-      .eq("id", userId)
-      .maybeSingle();
+  const rawHandle = username?.trim() || `tg_${id}`;
+  const user_name =
+    rawHandle
+      .replace(/[^a-zA-Z0-9_.-]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 255) || `tg_${id}`;
 
-    const existingUrl =
-      existingRow &&
-      typeof (existingRow as { avatar_url?: unknown }).avatar_url === "string"
-        ? (existingRow as { avatar_url: string }).avatar_url
-        : "";
+  const { data: existingRow } = await admin
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", userId)
+    .maybeSingle();
 
-    if (!isEscobetsStorageAvatarUrl(existingUrl)) {
-      const { error: profileError } = await admin.from("profiles").upsert(
-        {
-          id: userId,
-          avatar_url: photo_url,
-          first_name: first_name,
-          last_name: last_name ?? null,
-        },
-        { onConflict: "id" }
-      );
-      if (profileError) {
-        console.error("[auth/telegram] profiles upsert:", profileError.message);
-      }
+  const existingUrl =
+    existingRow &&
+    typeof (existingRow as { avatar_url?: unknown }).avatar_url === "string"
+      ? (existingRow as { avatar_url: string }).avatar_url
+      : "";
+
+  const upsertPayload: Record<string, unknown> = {
+    id: userId,
+    user_name,
+    email,
+    first_name: first_name,
+    last_name: last_name ?? null,
+  };
+  if (photo_url && !isEscobetsStorageAvatarUrl(existingUrl)) {
+    upsertPayload.avatar_url = photo_url;
+  }
+
+  const { error: profileError } = await admin.from("profiles").upsert(upsertPayload, {
+    onConflict: "id",
+  });
+  if (profileError) {
+    console.error("[auth/telegram] profiles upsert:", profileError.message);
+    const minimal: Record<string, unknown> = {
+      id: userId,
+      first_name: first_name,
+      last_name: last_name ?? null,
+    };
+    if (photo_url && !isEscobetsStorageAvatarUrl(existingUrl)) {
+      minimal.avatar_url = photo_url;
     }
+    await admin.from("profiles").upsert(minimal, { onConflict: "id" });
   }
 
   return response;

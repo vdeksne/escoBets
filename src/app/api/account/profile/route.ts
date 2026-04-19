@@ -229,6 +229,7 @@ function toProfile(params: {
   return {
     id: params.userId,
     telegramUsername: params.telegramUsername ?? null,
+    userName: getOptionalString("user_name", "userName"),
     email: resolvedEmail,
     firstName,
     lastName,
