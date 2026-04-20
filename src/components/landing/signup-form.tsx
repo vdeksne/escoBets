@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validatePasswordStrength } from "@/lib/account/password-policy";
 import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
+import { TermsAcceptance } from "@/components/legal/terms-acceptance";
 import { cn } from "@/lib/utils";
 import type { ApiResponse } from "@/types/api";
 
@@ -20,11 +21,17 @@ export function SignupForm({ className }: { className?: string }) {
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [termsAccepted, setTermsAccepted] = React.useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
+
+    if (!termsAccepted) {
+      setErrorMessage("Please read and accept the Terms and Conditions to create an account.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
@@ -160,7 +167,20 @@ export function SignupForm({ className }: { className?: string }) {
           </button>
         </div>
 
-        <Button type="submit" className="w-full rounded-[0.83331rem]" disabled={isSubmitting}>
+        <TermsAcceptance
+          idPrefix="signup"
+          accepted={termsAccepted}
+          onAcceptedChange={setTermsAccepted}
+          context="signup"
+          className="mt-1"
+        />
+
+        <Button
+          type="submit"
+          className="w-full rounded-[0.83331rem]"
+          disabled={isSubmitting || !termsAccepted}
+          title={!termsAccepted ? "Accept the Terms and Conditions to continue" : undefined}
+        >
           {isSubmitting ? "Signing up..." : "Signup"}
         </Button>
         {errorMessage ? (

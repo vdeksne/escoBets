@@ -17,6 +17,7 @@ const AUTH_RELATED_PATHS = new Set([
   "/signup",
   "/forgot-password",
   "/reset-password",
+  "/terms",
 ]);
 
 function skipAgeGateForPath(pathname: string | null): boolean {

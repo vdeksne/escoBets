@@ -17,6 +17,11 @@ export function Footer() {
             style={{ width: "auto", height: "auto" }}
           />
         </Link>
+        <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-gotham text-sm text-white/70">
+          <Link prefetch={false} href="/terms" className="hover:text-escobets-yellow hover:underline">
+            Terms and Conditions
+          </Link>
+        </nav>
         <p className="text-sm text-white">
           © <span className="text-escobets-yellow">2026</span> Escobets. All rights reserved.
         </p>

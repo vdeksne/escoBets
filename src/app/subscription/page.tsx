@@ -20,7 +20,7 @@ export default function SubscriptionPage() {
             aria-hidden
           />
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/60"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-black/70"
             aria-hidden
           />
         </div>
@@ -42,7 +42,11 @@ export default function SubscriptionPage() {
           />
         </div>
         <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-black/25 to-black/35"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-transparent"
           aria-hidden
         />
         <main className="relative flex flex-1 flex-col items-center justify-center px-4 py-12">
