@@ -62,6 +62,26 @@ export default function SubscriptionConfirmationPage() {
               </Link>
             </Button>
 
+            <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button
+                asChild
+                className="w-full rounded-lg bg-escobets-yellow font-gotham font-medium text-black hover:bg-escobets-yellow/90 sm:w-auto sm:min-w-[11rem]"
+              >
+                <Link prefetch={false} href="/account">
+                  Back to site
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                asChild
+                className="w-full rounded-lg border-white/20 bg-black/30 font-gotham font-medium text-white hover:bg-white/10 sm:w-auto sm:min-w-[11rem]"
+              >
+                <Link prefetch={false} href="/subscription">
+                  Back to pricing
+                </Link>
+              </Button>
+            </div>
+
             <p className="max-w-md font-gotham text-xs leading-relaxed text-white/55">
               If the app asks for confirmation, approve the invite. Keep this link private — it&apos;s tied to
               member access. Need help? Use{" "}
@@ -70,14 +90,6 @@ export default function SubscriptionConfirmationPage() {
               </Link>{" "}
               from your account.
             </p>
-
-            <Link
-              prefetch={false}
-              href="/account"
-              className="font-gotham text-sm text-white/70 hover:text-escobets-yellow hover:underline"
-            >
-              Back to account
-            </Link>
           </div>
         </main>
       </div>
