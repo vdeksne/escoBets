@@ -322,6 +322,15 @@ export function SubscriptionForm({ className }: { className?: string }) {
                 checkout. If the button stays disabled, add the Payment Link
                 URLs in environment variables and redeploy.
               </p>
+              <p className="mt-3 font-gotham text-xs leading-relaxed text-white/70">
+                After payment, Stripe should redirect you back to{" "}
+                <code className="rounded border border-white/15 bg-black/40 px-1.5 py-0.5 font-mono text-[11px] text-white/85">
+                  /subscription/confirmation
+                </code>
+                . If you still land on Stripe&apos;s “Thanks for subscribing”
+                page, open your Payment Link in Stripe and set{" "}
+                <span className="font-medium text-white/85">After payment → Redirect</span>.
+              </p>
               {!checkoutUrl ? (
                 <div
                   role="status"
