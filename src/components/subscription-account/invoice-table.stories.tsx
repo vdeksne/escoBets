@@ -26,7 +26,6 @@ const mockInvoices: Invoice[] = [
 export const Default: Story = {
   args: {
     invoices: mockInvoices,
-    onDownload: () => console.log("Download clicked"),
   },
   decorators: [
     (Story) => (

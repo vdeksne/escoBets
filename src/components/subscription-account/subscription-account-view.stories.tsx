@@ -26,7 +26,6 @@ export const Default: Story = {
     data: MOCK_SUBSCRIPTION_ACCOUNT_DATA,
     onUpgrade: () => console.log("Upgrade"),
     onChangePayment: () => console.log("Change payment"),
-    onDownloadInvoice: () => console.log("Download"),
   },
   decorators: [
     (Story) => (
@@ -45,7 +44,6 @@ export const FullPage: Story = {
     data: MOCK_SUBSCRIPTION_ACCOUNT_DATA,
     onUpgrade: () => {},
     onChangePayment: () => {},
-    onDownloadInvoice: () => {},
   },
   decorators: [
     (Story) => (

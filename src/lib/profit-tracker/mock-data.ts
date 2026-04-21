@@ -59,6 +59,22 @@ export const MOCK_PROFIT_TRACKER_DATA: ProfitTrackerData = {
         { day: "Sat", fullDay: "Saturday", value: 15000, date: "2026-02-22" },
       ],
     },
+    total: {
+      summary: {
+        investments: 127000,
+        totalProfits: 19300,
+        totalLosses: 3800,
+      },
+      chartData: [
+        { day: "Sun", fullDay: "Sunday", value: 3500, date: "2026-02-17" },
+        { day: "Mon", fullDay: "Monday", value: 6500, date: "2026-02-18" },
+        { day: "Tue", fullDay: "Tuesday", value: 10000, date: "2026-02-19" },
+        { day: "Wed", fullDay: "Wednesday", value: 14000, date: "2026-02-20" },
+        { day: "Thu", fullDay: "Thursday", value: 18000, date: "2026-02-21" },
+        { day: "Fri", fullDay: "Friday", value: 22000, date: "2026-02-22" },
+        { day: "Sat", fullDay: "Saturday", value: 26000, date: "2026-02-23" },
+      ],
+    },
   },
 };
 

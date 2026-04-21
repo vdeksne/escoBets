@@ -29,17 +29,17 @@ export function CurrentPlanSummary({
     >
       <div className="flex items-center justify-between">
         <h2 className="font-gotham text-lg font-semibold text-white">
-          Current Plan Summary
+          Subscription
         </h2>
         <Button
           type="button"
           onClick={onUpgrade}
           className="rounded-lg bg-escobets-yellow px-4 py-2 font-gotham font-medium text-black hover:bg-escobets-yellow/90"
         >
-          Upgrade
+          Manage billing
         </Button>
       </div>
-      <div className="mt-6 grid grid-cols-3 gap-6">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
         <div>
           <p className="font-gotham text-xs uppercase tracking-wider text-white/50">
             Plan Name
@@ -64,6 +64,16 @@ export function CurrentPlanSummary({
             {data.planCost}
           </p>
         </div>
+        {data.nextBillingDate ? (
+          <div>
+            <p className="font-gotham text-xs uppercase tracking-wider text-white/50">
+              Next billing date
+            </p>
+            <p className="mt-1 font-gotham text-base font-medium text-white">
+              {data.nextBillingDate}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   );

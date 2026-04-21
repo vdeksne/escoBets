@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, MoreVertical } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import type { PeriodMetric } from "@/types/profit-tracker";
 import { cn } from "@/lib/utils";
 
@@ -26,13 +26,6 @@ export function SummaryCard({ title, metric, className }: SummaryCardProps) {
         className
       )}
     >
-      <button
-        type="button"
-        className="absolute right-3 top-3 text-white/50 hover:text-white"
-        aria-label="More options"
-      >
-        <MoreVertical className="h-5 w-5" />
-      </button>
       <h3 className="font-gotham text-sm font-medium text-white/80">{title}</h3>
       <p className="mt-1 font-gotham text-xs text-white/60">{metric.period}</p>
       <div className="mt-2 flex items-center gap-2">

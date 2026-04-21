@@ -4,7 +4,8 @@ import Link from "next/link";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { ArrowLeft } from "lucide-react";
-import { MOCK_ENTRIES } from "@/lib/profit-tracker/mock-data";
+import { EntriesCsvToolbar } from "@/components/profit-tracker/entries-csv-toolbar";
+import { useProfitTrackerEntries } from "@/lib/profit-tracker/use-profit-tracker-entries";
 import type { TrackingType } from "@/types/profit-tracker";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,8 @@ const typeColors: Record<TrackingType, string> = {
 
 /** Backend: GET /api/profit-tracker/entries with pagination, filters */
 export default function ProfitTrackerEntriesPage() {
+  const entries = useProfitTrackerEntries();
+
   return (
     <div className="flex min-h-screen flex-col bg-black">
       <Header variant="withLogo" />
@@ -38,12 +41,16 @@ export default function ProfitTrackerEntriesPage() {
             All Entries
           </h1>
           <p className="mt-2 font-gotham text-sm text-white/60">
-            Backend: Add pagination and filters by type/date.
+            Export or import entries as CSV (Excel). Data is stored in this browser until a backend is connected.
           </p>
+
+          <div className="mt-4">
+            <EntriesCsvToolbar entries={entries} />
+          </div>
 
           <div className="mt-6 rounded-xl border border-white/10 bg-black/40">
             <ul className="divide-y divide-white/10">
-              {MOCK_ENTRIES.map((entry) => (
+              {entries.map((entry) => (
                 <li
                   key={entry.id}
                   className="flex items-center justify-between px-4 py-3"
@@ -55,10 +62,10 @@ export default function ProfitTrackerEntriesPage() {
                         typeColors[entry.type]
                       )}
                     >
-                      {typeLabels[entry.type]}
+                      {entry.name ?? typeLabels[entry.type]}
                     </span>
                     <span className="ml-2 font-gotham text-sm text-white/60">
-                      {entry.date}
+                      {entry.name ? `${typeLabels[entry.type]} - ${entry.date}` : entry.date}
                     </span>
                   </div>
                   <span className="font-gotham font-medium text-white">

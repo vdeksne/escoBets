@@ -9,6 +9,8 @@ export interface PlanSummary {
   planName: string;
   billingCycle: BillingCycle;
   planCost: string; // e.g. "$20"
+  nextBillingDate?: string;
+  status?: string;
 }
 
 export interface PaymentMethod {
@@ -27,6 +29,7 @@ export interface Invoice {
   plan: string;
   amount: string;
   status: InvoiceStatus;
+  downloadUrl?: string;
 }
 
 /** Full subscription account data – shape of API response */

@@ -5,21 +5,33 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import type { TrackingType } from "@/types/profit-tracker";
 import { TRACKING_TYPES } from "@/lib/profit-tracker/mock-data";
+import { addProfitTrackerEntry } from "@/lib/profit-tracker/entries-storage";
+import { EntriesCsvToolbar } from "@/components/profit-tracker/entries-csv-toolbar";
+import { useProfitTrackerEntries } from "@/lib/profit-tracker/use-profit-tracker-entries";
 import { cn } from "@/lib/utils";
 
 /** Backend: POST /api/profit-tracker/entries { amount, type, date } */
 export function ValueInputForm({ className }: { className?: string }) {
+  const [entryName, setEntryName] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [trackingType, setTrackingType] = React.useState<TrackingType>("investment");
   const [date, setDate] = React.useState(() => {
     const d = new Date();
     return d.toISOString().slice(0, 10);
   });
+  const entries = useProfitTrackerEntries();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Backend: await fetch('/api/profit-tracker/entries', { method: 'POST', body: JSON.stringify({ amount: +amount, type: trackingType, date }) })
-    console.log("Submit:", { amount: +amount, type: trackingType, date });
+    const n = Number.parseFloat(amount);
+    if (!Number.isFinite(n) || n < 0) return;
+    addProfitTrackerEntry({
+      name: entryName.trim() || undefined,
+      amount: n,
+      type: trackingType,
+      date,
+    });
+    setEntryName("");
     setAmount("");
   };
 
@@ -31,18 +43,37 @@ export function ValueInputForm({ className }: { className?: string }) {
       )}
     >
       <div className="flex items-center justify-between">
-        <h3 className="font-gotham text-lg font-semibold text-escobets-yellow">
-          Value Input
-        </h3>
+        <div>
+          <h3 className="font-gotham text-lg font-semibold text-escobets-yellow">
+            Value Input
+          </h3>
+          <p className="mt-1 font-gotham text-xs text-white/60">
+            Add entries, then use tools below to import/export CSV.
+          </p>
+        </div>
         <Link
           href="/profit-tracker/entries"
-          className="font-gotham text-sm text-escobets-yellow hover:underline"
+          className="inline-flex whitespace-nowrap font-gotham text-sm text-escobets-yellow hover:underline"
         >
           See more
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        <div>
+          <label htmlFor="entry-name" className="sr-only">
+            Entry name
+          </label>
+          <Input
+            id="entry-name"
+            type="text"
+            placeholder="Entry name (optional)"
+            value={entryName}
+            onChange={(e) => setEntryName(e.target.value)}
+            className="rounded-lg border-white/30 bg-transparent text-white placeholder:text-white/50"
+            maxLength={80}
+          />
+        </div>
         <div>
           <label htmlFor="amount" className="sr-only">
             Amount
@@ -98,6 +129,14 @@ export function ValueInputForm({ className }: { className?: string }) {
           Add
         </button>
       </form>
+
+      <div className="mt-6 border-t border-white/10 pt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="font-gotham text-xs text-white/80">Data tools</p>
+          <p className="font-gotham text-[11px] text-white/50">CSV (Excel)</p>
+        </div>
+        <EntriesCsvToolbar entries={entries} />
+      </div>
     </div>
   );
 }

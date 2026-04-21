@@ -108,3 +108,95 @@ body {
 .date-of-birth-calendar .rdp-disabled {
   color: rgba(255, 255, 255, 0.25);
 }
+
+/* react-day-picker (profit tracker range): brand yellow selection (readable) */
+.profit-tracker-range-calendar.rdp-root {
+  color: #fff;
+}
+
+.profit-tracker-range-calendar .rdp-weekday {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* today marker (non-selected day) */
+.profit-tracker-range-calendar .rdp-today .rdp-day_button {
+  color: #dfff00 !important;
+}
+
+/* selected start/end + single selected */
+.profit-tracker-range-calendar .rdp-selected .rdp-day_button,
+.profit-tracker-range-calendar .rdp-range_start .rdp-day_button,
+.profit-tracker-range-calendar .rdp-range_end .rdp-day_button {
+  background: #dfff00;
+  color: #000;
+  border-radius: 9999px;
+  border: none !important;
+  box-shadow: 0 0 0 2px rgba(223, 255, 0, 0.6) !important;
+}
+
+/* avoid square background blocks on edge days */
+.profit-tracker-range-calendar .rdp-range_start,
+.profit-tracker-range-calendar .rdp-range_end,
+.profit-tracker-range-calendar .rdp-selected {
+  background: transparent !important;
+}
+
+.profit-tracker-range-calendar .rdp-range_start .rdp-day_button,
+.profit-tracker-range-calendar .rdp-range_end .rdp-day_button {
+  box-shadow: 0 0 0 2px rgba(223, 255, 0, 0.75) !important;
+}
+
+/* middle of range */
+.profit-tracker-range-calendar .rdp-range_middle {
+  background: transparent !important; /* prevent washed-out block highlight */
+}
+
+.profit-tracker-range-calendar .rdp-range_middle .rdp-day_button {
+  background: rgba(223, 255, 0, 0.22) !important;
+  color: #000 !important;
+  border-radius: 9999px;
+  box-shadow: none !important;
+}
+
+.profit-tracker-range-calendar .rdp-day_button:hover {
+  background: rgba(223, 255, 0, 0.22);
+}
+
+/* navigation arrows (month switch) */
+/* DayPicker v9 uses slightly different button classnames depending on build.
+   We target multiple possibilities and force brand-yellow (no blue). */
+.profit-tracker-range-calendar .rdp-nav_button,
+.profit-tracker-range-calendar .rdp-nav button,
+.profit-tracker-range-calendar .rdp-button_previous,
+.profit-tracker-range-calendar .rdp-button_next {
+  color: rgba(223, 255, 0, 0.95) !important;
+}
+
+.profit-tracker-range-calendar .rdp-nav_button:hover,
+.profit-tracker-range-calendar .rdp-nav button:hover,
+.profit-tracker-range-calendar .rdp-button_previous:hover,
+.profit-tracker-range-calendar .rdp-button_next:hover {
+  background: rgba(223, 255, 0, 0.12) !important;
+}
+
+.profit-tracker-range-calendar .rdp-nav svg,
+.profit-tracker-range-calendar .rdp-nav_button svg,
+.profit-tracker-range-calendar .rdp-button_previous svg,
+.profit-tracker-range-calendar .rdp-button_next svg {
+  stroke: currentColor !important;
+}
+
+/* remove default blue outlines; use brand-yellow focus ring */
+.profit-tracker-range-calendar .rdp-day_button {
+  outline: none !important;
+}
+
+.profit-tracker-range-calendar .rdp-nav_button:focus,
+.profit-tracker-range-calendar .rdp-nav_button:focus-visible,
+.profit-tracker-range-calendar .rdp-nav button:focus,
+.profit-tracker-range-calendar .rdp-nav button:focus-visible,
+.profit-tracker-range-calendar .rdp-day_button:focus,
+.profit-tracker-range-calendar .rdp-day_button:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(223, 255, 0, 0.45) !important;
+}

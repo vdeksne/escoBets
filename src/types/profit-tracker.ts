@@ -9,6 +9,7 @@ export type TrackingType = "investment" | "profit" | "loss";
 /** Raw entry from form / DB */
 export interface ProfitTrackerEntry {
   id: string;
+  name?: string;
   amount: number;
   type: TrackingType;
   date: string; // ISO date YYYY-MM-DD
@@ -30,6 +31,10 @@ export interface DayDataPoint {
   fullDay: string; // "Sunday", "Monday", ...
   value: number;
   date: string; // YYYY-MM-DD
+  /** Optional series for multi-line charts */
+  investments?: number;
+  profits?: number;
+  losses?: number;
 }
 
 /** Summary for a week (investments, profits, losses) */
@@ -49,5 +54,6 @@ export interface ProfitTrackerData {
   weeklyReport: {
     thisWeek: { summary: WeeklySummary; chartData: DayDataPoint[] };
     lastWeek: { summary: WeeklySummary; chartData: DayDataPoint[] };
+    total: { summary: WeeklySummary; chartData: DayDataPoint[] };
   };
 }

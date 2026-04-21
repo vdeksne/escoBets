@@ -41,7 +41,7 @@ export function PaymentMethod({ data, onChange, className }: PaymentMethodProps)
           onClick={onChange}
           className="font-gotham text-sm text-white underline hover:no-underline"
         >
-          Change
+          Manage
         </button>
       </div>
       <div className="mt-4 flex items-center gap-4">

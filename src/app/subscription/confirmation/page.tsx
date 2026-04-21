@@ -88,8 +88,8 @@ export default function SubscriptionConfirmationPage() {
                 asChild
                 className="w-full rounded-lg border-white/20 bg-black/30 font-gotham font-medium text-white hover:bg-white/10 sm:w-auto sm:min-w-[11rem]"
               >
-                <Link prefetch={false} href="/subscription">
-                  Back to pricing
+                <Link prefetch={false} href="/account/subscription">
+                  Manage billing
                 </Link>
               </Button>
             </div>
