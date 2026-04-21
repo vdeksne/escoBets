@@ -5,6 +5,7 @@ import { CreditCard } from "lucide-react";
 import { ProfileCard } from "./profile-card";
 import { ChangePassword } from "./change-password";
 import { ProfileUpdateForm } from "./profile-update-form";
+import { DeleteAccount } from "./delete-account";
 import type { Profile } from "@/types/account";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ interface AccountViewProps {
   onSaveProfile?: (data: Partial<Profile>) => void | Promise<void>;
   onUploadAvatar?: (file: File) => void | Promise<void>;
   onDeleteAvatar?: () => void | Promise<void>;
+  onDeleteAccount?: () => void | Promise<void>;
   className?: string;
 }
 
@@ -23,6 +25,7 @@ export function AccountView({
   onSaveProfile,
   onUploadAvatar,
   onDeleteAvatar,
+  onDeleteAccount,
   className,
 }: AccountViewProps) {
   return (
@@ -61,6 +64,8 @@ export function AccountView({
           className="min-h-0 h-full"
         />
       </div>
+
+      {onDeleteAccount ? <DeleteAccount onDeleteAccount={onDeleteAccount} /> : null}
     </div>
   );
 }

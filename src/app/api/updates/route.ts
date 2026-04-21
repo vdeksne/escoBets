@@ -119,7 +119,8 @@ export async function GET(
   const pageSize = parsePositiveIntParam(url.searchParams.get("pageSize"), {
     fallback: 20,
     min: 1,
-    max: 100,
+    /** Keep in sync with `src/app/updates/page.tsx` (pageSize=200). */
+    max: 500,
   });
 
   if (page == null || pageSize == null) {

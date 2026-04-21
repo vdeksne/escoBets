@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { hasAdminRole } from "@/lib/auth/admin";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { MOCK_ADMIN_USERS } from "@/lib/users/mock-data";
 import type { AdminUser, UserStatus } from "@/types/user";
 import type { ApiError, ApiSuccess } from "@/types/api";
@@ -16,6 +17,10 @@ interface UsersData {
 }
 
 type UsersResponse = ApiSuccess<UsersData> | ApiError;
+
+interface UsersDeleteData {
+  deleted: number;
+}
 
 const VALID_STATUSES = new Set<UserStatus>([
   "Pending",
@@ -56,26 +61,6 @@ function parsePositiveIntParam(
     return null;
   }
   return value;
-}
-
-function hasAdminRole(user: User): boolean {
-  const roleValues: string[] = [];
-
-  const userRole = user.user_metadata?.role;
-  const appRole = user.app_metadata?.role;
-  const userRoles = user.user_metadata?.roles;
-  const appRoles = user.app_metadata?.roles;
-
-  if (typeof userRole === "string") roleValues.push(userRole);
-  if (typeof appRole === "string") roleValues.push(appRole);
-  if (Array.isArray(userRoles)) {
-    roleValues.push(...userRoles.filter((value): value is string => typeof value === "string"));
-  }
-  if (Array.isArray(appRoles)) {
-    roleValues.push(...appRoles.filter((value): value is string => typeof value === "string"));
-  }
-
-  return roleValues.some((role) => role.toLowerCase() === "admin");
 }
 
 function normalizeAdminUser(row: Record<string, unknown>): AdminUser | null {
@@ -160,7 +145,8 @@ export async function GET(
   const pageSize = parsePositiveIntParam(url.searchParams.get("pageSize"), {
     fallback: 20,
     min: 1,
-    max: 100,
+    /** Admin users table loads many rows; keep in sync with `src/app/users/page.tsx`. */
+    max: 500,
   });
 
   if (page == null || pageSize == null) {
@@ -218,4 +204,77 @@ export async function GET(
       reason: error instanceof Error ? error.message : "Unknown error",
     });
   }
+}
+
+const MAX_DELETE_BATCH = 500;
+
+export async function DELETE(
+  request: NextRequest
+): Promise<NextResponse<ApiSuccess<UsersDeleteData> | ApiError>> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
+  }
+
+  if (!hasAdminRole(user)) {
+    return errorResponse(403, "FORBIDDEN", "Admin access required.");
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse(400, "INVALID_BODY", "Expected JSON body.");
+  }
+
+  if (
+    !body ||
+    typeof body !== "object" ||
+    !Array.isArray((body as { ids?: unknown }).ids)
+  ) {
+    return errorResponse(400, "INVALID_BODY", "Body must include an `ids` array of strings.");
+  }
+
+  const rawIds = (body as { ids: unknown[] }).ids;
+  const ids = rawIds.filter(
+    (id): id is string => typeof id === "string" && id.trim().length > 0
+  );
+
+  if (ids.length === 0) {
+    return errorResponse(400, "INVALID_BODY", "At least one valid id is required.");
+  }
+
+  if (ids.length > MAX_DELETE_BATCH) {
+    return errorResponse(
+      400,
+      "INVALID_BODY",
+      `Too many ids (max ${MAX_DELETE_BATCH}).`
+    );
+  }
+
+  const admin = createServiceRoleClient();
+  if (!admin) {
+    return errorResponse(
+      503,
+      "SERVER_CONFIG",
+      "Server is missing Supabase service role configuration."
+    );
+  }
+
+  const { error, count } = await admin
+    .from("users")
+    .delete({ count: "exact" })
+    .in("id", ids);
+
+  if (error) {
+    return errorResponse(500, "DELETE_FAILED", error.message);
+  }
+
+  const deleted = typeof count === "number" ? count : ids.length;
+  return successResponse<UsersDeleteData>({ deleted });
 }

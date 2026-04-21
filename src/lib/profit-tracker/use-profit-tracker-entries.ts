@@ -8,19 +8,23 @@ import {
   PROFIT_TRACKER_ENTRIES_CHANGED,
 } from "@/lib/profit-tracker/entries-storage";
 
-export function useProfitTrackerEntries() {
+/**
+ * Profit tracker entries for the current browser.
+ * Pass `storageScope` (e.g. admin user id) to isolate data per user; omit for the signed-in member view.
+ */
+export function useProfitTrackerEntries(storageScope?: string) {
   const [entries, setEntries] = useState<ProfitTrackerEntry[]>(MOCK_ENTRIES);
 
   useEffect(() => {
-    setEntries(loadProfitTrackerEntries());
-    const sync = () => setEntries(loadProfitTrackerEntries());
+    setEntries(loadProfitTrackerEntries(storageScope));
+    const sync = () => setEntries(loadProfitTrackerEntries(storageScope));
     window.addEventListener(PROFIT_TRACKER_ENTRIES_CHANGED, sync);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener(PROFIT_TRACKER_ENTRIES_CHANGED, sync);
       window.removeEventListener("storage", sync);
     };
-  }, []);
+  }, [storageScope]);
 
   return entries;
 }

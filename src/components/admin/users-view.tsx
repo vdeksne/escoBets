@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import type { AdminUser, UserStatus } from "@/types/user";
@@ -8,6 +10,8 @@ import { cn } from "@/lib/utils";
 
 interface UsersViewProps {
   users: AdminUser[];
+  /** Called after successful delete to reload from the API. */
+  onRefresh?: () => void | Promise<void>;
 }
 
 function formatCurrency(amount: number): string {
@@ -22,11 +26,99 @@ const STATUS_DOT_COLORS: Record<UserStatus, string> = {
   Archived: "bg-zinc-500",
 };
 
-export function UsersView({ users }: UsersViewProps) {
+type SortKey =
+  | "userName"
+  | "telegram"
+  | "phone"
+  | "email"
+  | "status"
+  | "lastUpdate"
+  | "profits"
+  | "losses";
+
+/** Parse display strings like "01 Mar 2026, 09:00" for ordering. */
+function lastUpdateSortValue(s: string): number {
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function compareUsers(a: AdminUser, b: AdminUser, key: SortKey): number {
+  switch (key) {
+    case "userName":
+      return a.userName.localeCompare(b.userName, undefined, { sensitivity: "base" });
+    case "telegram":
+      return a.telegram.localeCompare(b.telegram, undefined, { sensitivity: "base" });
+    case "phone":
+      return a.phone.localeCompare(b.phone, undefined, { numeric: true });
+    case "email":
+      return a.email.localeCompare(b.email, undefined, { sensitivity: "base" });
+    case "status":
+      return a.status.localeCompare(b.status);
+    case "lastUpdate":
+      return lastUpdateSortValue(a.lastUpdate) - lastUpdateSortValue(b.lastUpdate);
+    case "profits":
+      return a.profits - b.profits;
+    case "losses":
+      return a.losses - b.losses;
+    default:
+      return 0;
+  }
+}
+
+function SortableTh({
+  label,
+  columnKey,
+  activeKey,
+  dir,
+  onSort,
+}: {
+  label: string;
+  columnKey: SortKey;
+  activeKey: SortKey | null;
+  dir: "asc" | "desc";
+  onSort: (key: SortKey) => void;
+}) {
+  const active = activeKey === columnKey;
+  return (
+    <th
+      className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70"
+      scope="col"
+      aria-sort={
+        active ? (dir === "asc" ? "ascending" : "descending") : "none"
+      }
+    >
+      <button
+        type="button"
+        onClick={() => onSort(columnKey)}
+        className="inline-flex max-w-full items-center gap-1.5 rounded text-left hover:text-white"
+      >
+        <span>{label}</span>
+        {active ? (
+          dir === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5 shrink-0 text-escobets-yellow" aria-hidden />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5 shrink-0 text-escobets-yellow" aria-hidden />
+          )
+        ) : (
+          <ArrowUpDown
+            className="h-3.5 w-3.5 shrink-0 text-white/40"
+            aria-hidden
+          />
+        )}
+      </button>
+    </th>
+  );
+}
+
+export function UsersView({ users, onRefresh }: UsersViewProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<UserStatus | "All">("All");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const selectAllOnPageRef = useRef<HTMLInputElement>(null);
 
   const searchFilteredUsers = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -53,13 +145,117 @@ export function UsersView({ users }: UsersViewProps) {
     return searchFilteredUsers.filter((u) => u.status === statusFilter);
   }, [searchFilteredUsers, statusFilter]);
 
-  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const sortedUsers = useMemo(() => {
+    if (!sortKey) return filteredUsers;
+    const mult = sortDir === "asc" ? 1 : -1;
+    return [...filteredUsers].sort((a, b) => {
+      const c = compareUsers(a, b, sortKey);
+      if (c !== 0) return c * mult;
+      return a.id.localeCompare(b.id);
+    });
+  }, [filteredUsers, sortKey, sortDir]);
+
+  const totalPages = Math.ceil(sortedUsers.length / rowsPerPage);
   const paginatedUsers = useMemo(() => {
     const start = (page - 1) * rowsPerPage;
-    return filteredUsers.slice(start, start + rowsPerPage);
-  }, [filteredUsers, page, rowsPerPage]);
+    return sortedUsers.slice(start, start + rowsPerPage);
+  }, [sortedUsers, page, rowsPerPage]);
 
-  const filteredCount = filteredUsers.length;
+  function handleSortColumn(key: SortKey) {
+    setPage(1);
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const selectedOnPageCount = useMemo(
+    () => paginatedUsers.filter((u) => selectedIds.has(u.id)).length,
+    [paginatedUsers, selectedIds]
+  );
+  const allOnPageSelected =
+    paginatedUsers.length > 0 && selectedOnPageCount === paginatedUsers.length;
+  const someOnPageSelected =
+    selectedOnPageCount > 0 && selectedOnPageCount < paginatedUsers.length;
+
+  useEffect(() => {
+    const el = selectAllOnPageRef.current;
+    if (el) el.indeterminate = someOnPageSelected;
+  }, [someOnPageSelected]);
+
+  const filteredCount = sortedUsers.length;
+
+  function toggleSelectAllOnPage() {
+    setDeleteError(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        paginatedUsers.forEach((u) => next.delete(u.id));
+      } else {
+        paginatedUsers.forEach((u) => next.add(u.id));
+      }
+      return next;
+    });
+  }
+
+  function toggleRow(id: string) {
+    setDeleteError(null);
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleDeleteSelected() {
+    if (selectedIds.size === 0 || isDeleting) return;
+    const ids = [...selectedIds];
+    const ok = window.confirm(
+      `Delete ${ids.length} user${ids.length === 1 ? "" : "s"}? This cannot be undone.`
+    );
+    if (!ok) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const response = await fetch("/api/users", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const payload = (await response.json()) as { success: boolean; error?: { message: string } };
+
+      if (!response.ok || !payload.success) {
+        const message =
+          "error" in payload && payload.error
+            ? payload.error.message
+            : "Failed to delete users.";
+        throw new Error(message);
+      }
+
+      setSelectedIds(new Set());
+      setPage(1);
+      try {
+        await onRefresh?.();
+      } catch (refreshError) {
+        setDeleteError(
+          refreshError instanceof Error
+            ? `Deleted, but refreshing the list failed: ${refreshError.message}`
+            : "Deleted, but refreshing the list failed."
+        );
+      }
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete users.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
@@ -110,7 +306,32 @@ export function UsersView({ users }: UsersViewProps) {
                 />
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <button
+                type="button"
+                disabled={selectedIds.size === 0 || isDeleting}
+                onClick={() => void handleDeleteSelected()}
+                className={cn(
+                  "rounded-lg border px-4 py-2 font-gotham text-sm transition",
+                  selectedIds.size === 0 || isDeleting
+                    ? "cursor-not-allowed border-white/10 bg-white/5 text-white/40"
+                    : "border-red-500/50 bg-red-950/40 text-red-200 hover:border-red-400/60 hover:bg-red-950/70"
+                )}
+              >
+                {isDeleting
+                  ? "Deleting…"
+                  : selectedIds.size > 0
+                    ? `Delete selected (${selectedIds.size})`
+                    : "Delete selected"}
+              </button>
+            </div>
           </div>
+
+          {deleteError ? (
+            <p className="mt-2 font-gotham text-sm text-red-400" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
 
           {/* Status tabs */}
           <div className="mt-4 flex flex-wrap gap-2 border-b border-white/10 pb-4">
@@ -142,15 +363,76 @@ export function UsersView({ users }: UsersViewProps) {
             <table className="w-full min-w-[900px] border-collapse font-gotham text-sm">
               <thead>
                 <tr className="border-b border-white/10 bg-escobets-gray-card/50">
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">#</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">User name</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Telegram</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Phone</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Email</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Status</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Last update</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Profits</th>
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">Losses</th>
+                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={selectAllOnPageRef}
+                        type="checkbox"
+                        checked={allOnPageSelected}
+                        onChange={toggleSelectAllOnPage}
+                        disabled={paginatedUsers.length === 0}
+                        className="h-4 w-4 shrink-0 border-white/30 accent-escobets-yellow disabled:opacity-40"
+                        aria-label="Select all rows on this page"
+                      />
+                      <span>#</span>
+                    </div>
+                  </th>
+                  <SortableTh
+                    label="User name"
+                    columnKey="userName"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Telegram"
+                    columnKey="telegram"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Phone"
+                    columnKey="phone"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Email"
+                    columnKey="email"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Status"
+                    columnKey="status"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Last update"
+                    columnKey="lastUpdate"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Profits"
+                    columnKey="profits"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
+                  <SortableTh
+                    label="Losses"
+                    columnKey="losses"
+                    activeKey={sortKey}
+                    dir={sortDir}
+                    onSort={handleSortColumn}
+                  />
                 </tr>
               </thead>
               <tbody>
@@ -162,16 +444,23 @@ export function UsersView({ users }: UsersViewProps) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <input
-                          type="radio"
-                          name="user-select"
-                          value={user.id}
+                          type="checkbox"
+                          checked={selectedIds.has(user.id)}
+                          onChange={() => toggleRow(user.id)}
                           className="h-4 w-4 shrink-0 border-white/30 accent-escobets-yellow"
                           aria-label={`Select ${user.userName}`}
                         />
                         <span className="text-white/80">{(page - 1) * rowsPerPage + idx + 1}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-white">{user.userName}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/users/${encodeURIComponent(user.id)}/profit-tracker?name=${encodeURIComponent(user.userName)}`}
+                        className="text-escobets-yellow transition hover:underline"
+                      >
+                        {user.userName}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3 text-white/90">{user.telegram}</td>
                     <td className="px-4 py-3 text-white/90">{user.phone}</td>
                     <td className="px-4 py-3 text-white/90">{user.email}</td>

@@ -417,62 +417,57 @@ set
 with config as (
   select
     array[
-      'Viktorija Deksne',
-      'John Smith',
-      'Maria Garcia',
-      'Lars Andersen',
-      'Anna Kowalski',
-      'Erik Nielsen',
-      'Sophie Muller',
-      'James Wilson',
-      'Elena Petrov',
-      'Mark Johnson'
-    ]::text[] as names,
-    array[
-      'vicky_latvia',
-      'john_smith',
-      'maria_g',
-      'lars_a',
-      'anna_k',
-      'erik_n',
-      'sophie_m',
-      'james_w',
-      'elena_p',
-      'mark_j'
-    ]::text[] as telegrams,
-    array[
-      '+371 27266132',
-      '+44 7700 900123',
-      '+34 612 345678',
-      '+45 20123456',
-      '+48 601 234 567',
-      '+46 70 123 4567',
-      '+49 151 12345678',
-      '+1 555 123 4567',
-      '+7 912 345 6789',
-      '+33 6 12 34 56 78'
-    ]::text[] as phones,
-    array[
-      'viktorijadeksne@gmail.com',
-      'john@example.com',
-      'maria@example.com',
-      'lars@example.com',
-      'anna@example.com',
-      'erik@example.com',
-      'sophie@example.com',
-      'james@example.com',
-      'elena@example.com',
-      'mark@example.com'
-    ]::text[] as emails,
+      'Viktorija',
+      'John',
+      'Maria',
+      'Lars',
+      'Anna',
+      'Erik',
+      'Sophie',
+      'James',
+      'Elena',
+      'Mark',
+      'Olivia',
+      'Thomas',
+      'Julia',
+      'Mateo',
+      'Priya',
+      'Yuki',
+      'Fatima',
+      'Nathan',
+      'Zoe',
+      'Ahmed'
+    ]::text[] as first_names,
+    array['Deksne', 'Smith', 'Garcia', 'Nielsen', 'Kowalski']::text[] as last_names,
     array['Complete', 'Pending', 'Failed', 'Complete', 'Complete', 'Pending', 'Failed', 'Complete', 'Archived', 'Complete']::text[] as statuses
 ),
 generated_users as (
   select
     'user-' || gs::text as id,
-    c.names[((gs - 1) % array_length(c.names, 1)) + 1] as "userName",
-    c.telegrams[((gs - 1) % array_length(c.telegrams, 1)) + 1] as telegram,
-    c.phones[((gs - 1) % array_length(c.phones, 1)) + 1] as phone,
-    c.emails[((gs - 1) % array_length(c.emails, 1)) + 1] as email,
+    c.first_names[((gs - 1) % array_length(c.first_names, 1)) + 1]
+      || ' '
+      || c.last_names[((gs - 1) / array_length(c.first_names, 1)) + 1] as "userName",
+    lower(
+      regexp_replace(
+        c.first_names[((gs - 1) % array_length(c.first_names, 1)) + 1]
+          || '_'
+          || c.last_names[((gs - 1) / array_length(c.first_names, 1)) + 1],
+        '[^a-zA-Z0-9_]+',
+        '_',
+        'g'
+      )
+    )
+      || '_'
+      || lpad(gs::text, 3, '0') as telegram,
+    '+1 555 ' || lpad((2000000 + gs)::text, 7, '0') as phone,
+    lower(
+      c.first_names[((gs - 1) % array_length(c.first_names, 1)) + 1]
+        || '.'
+        || c.last_names[((gs - 1) / array_length(c.first_names, 1)) + 1]
+        || '.'
+        || gs::text
+        || '@demo.escobets.local'
+    ) as email,
     c.statuses[((gs - 1) % array_length(c.statuses, 1)) + 1] as status,
     lpad((((gs - 1) % 28) + 1)::text, 2, '0')
       || ' Mar 2026, '

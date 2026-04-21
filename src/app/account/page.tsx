@@ -5,6 +5,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { AccountView } from "@/components/account/account-view";
 import { deleteProfileAvatar, uploadProfileAvatar } from "@/lib/account/avatar-upload";
+import { createClient } from "@/lib/supabase/client";
 import { MOCK_PROFILE } from "@/lib/account/mock-data";
 import type { ApiResponse } from "@/types/api";
 import type { Profile } from "@/types/account";
@@ -65,6 +66,23 @@ export default function AccountPage() {
     });
   };
 
+  const handleDeleteAccount = async () => {
+    const res = await fetch("/api/account", { method: "DELETE" });
+    const json = (await res.json()) as ApiResponse<{ ok: true }>;
+    if (!res.ok || !json.success) {
+      throw new Error(
+        json.success === false ? json.error.message : "Failed to delete account."
+      );
+    }
+    const supabase = createClient();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // User record is already gone; session may be invalid — still leave the app.
+    }
+    window.location.assign("/");
+  };
+
   const handleSavePassword = async (data: { current: string; new: string; confirm: string }) => {
     const res = await fetch("/api/account/password", {
       method: "POST",
@@ -92,6 +110,7 @@ export default function AccountPage() {
             onSaveProfile={handleSaveProfile}
             onUploadAvatar={handleUploadAvatar}
             onDeleteAvatar={handleDeleteAvatar}
+            onDeleteAccount={handleDeleteAccount}
           />
           {loading ? (
             <p className="mt-4 font-gotham text-sm text-white/50">Loading profile…</p>

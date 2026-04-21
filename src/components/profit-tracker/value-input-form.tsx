@@ -10,8 +10,20 @@ import { EntriesCsvToolbar } from "@/components/profit-tracker/entries-csv-toolb
 import { useProfitTrackerEntries } from "@/lib/profit-tracker/use-profit-tracker-entries";
 import { cn } from "@/lib/utils";
 
+type ValueInputFormProps = {
+  className?: string;
+  /** Scope for local storage (e.g. admin view of another user). */
+  storageScope?: string;
+  /** Target for "See more" (entries list). */
+  entriesListHref?: string;
+};
+
 /** Backend: POST /api/profit-tracker/entries { amount, type, date } */
-export function ValueInputForm({ className }: { className?: string }) {
+export function ValueInputForm({
+  className,
+  storageScope,
+  entriesListHref = "/profit-tracker/entries",
+}: ValueInputFormProps) {
   const [entryName, setEntryName] = React.useState("");
   const [amount, setAmount] = React.useState("");
   const [trackingType, setTrackingType] = React.useState<TrackingType>("investment");
@@ -19,18 +31,21 @@ export function ValueInputForm({ className }: { className?: string }) {
     const d = new Date();
     return d.toISOString().slice(0, 10);
   });
-  const entries = useProfitTrackerEntries();
+  const entries = useProfitTrackerEntries(storageScope);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const n = Number.parseFloat(amount);
     if (!Number.isFinite(n) || n < 0) return;
-    addProfitTrackerEntry({
-      name: entryName.trim() || undefined,
-      amount: n,
-      type: trackingType,
-      date,
-    });
+    addProfitTrackerEntry(
+      {
+        name: entryName.trim() || undefined,
+        amount: n,
+        type: trackingType,
+        date,
+      },
+      storageScope
+    );
     setEntryName("");
     setAmount("");
   };
@@ -52,7 +67,7 @@ export function ValueInputForm({ className }: { className?: string }) {
           </p>
         </div>
         <Link
-          href="/profit-tracker/entries"
+          href={entriesListHref}
           className="inline-flex whitespace-nowrap font-gotham text-sm text-escobets-yellow hover:underline"
         >
           See more
@@ -135,7 +150,7 @@ export function ValueInputForm({ className }: { className?: string }) {
           <p className="font-gotham text-xs text-white/80">Data tools</p>
           <p className="font-gotham text-[11px] text-white/50">CSV (Excel)</p>
         </div>
-        <EntriesCsvToolbar entries={entries} />
+        <EntriesCsvToolbar entries={entries} storageScope={storageScope} />
       </div>
     </div>
   );

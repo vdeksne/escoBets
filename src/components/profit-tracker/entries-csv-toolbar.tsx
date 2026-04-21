@@ -27,17 +27,20 @@ function downloadCsv(filename: string, csv: string) {
 
 type Props = {
   entries: ProfitTrackerEntry[];
+  /** When set, import/export/clear use this scoped store (e.g. admin viewing a user). */
+  storageScope?: string;
 };
 
-export function EntriesCsvToolbar({ entries }: Props) {
+export function EntriesCsvToolbar({ entries, storageScope }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = useCallback(() => {
-    const data = entries.length > 0 ? entries : loadProfitTrackerEntries();
+    const data =
+      entries.length > 0 ? entries : loadProfitTrackerEntries(storageScope);
     const csv = entriesToCsv(data);
     const stamp = new Date().toISOString().slice(0, 10);
     downloadCsv(`profit-tracker-${stamp}.csv`, csv);
-  }, [entries]);
+  }, [entries, storageScope]);
 
   const handleImportFile = useCallback(
     async (file: File) => {
@@ -61,17 +64,17 @@ export function EntriesCsvToolbar({ entries }: Props) {
           "Cancel = No, keep existing data and merge with the import (same id updates a row)",
       );
       if (deletePrevious) {
-        saveProfitTrackerEntries(imported);
+        saveProfitTrackerEntries(imported, storageScope);
       } else {
-        const existing = loadProfitTrackerEntries();
+        const existing = loadProfitTrackerEntries(storageScope);
         const byId = new Map(existing.map((e) => [e.id, e]));
         for (const row of imported) {
           byId.set(row.id, row);
         }
-        saveProfitTrackerEntries(Array.from(byId.values()));
+        saveProfitTrackerEntries(Array.from(byId.values()), storageScope);
       }
     },
-    [],
+    [storageScope],
   );
 
   return (
@@ -108,7 +111,7 @@ export function EntriesCsvToolbar({ entries }: Props) {
           if (!first) return;
           const second = window.confirm("Are you sure? This cannot be undone.");
           if (!second) return;
-          clearProfitTrackerEntries();
+          clearProfitTrackerEntries(storageScope);
         }}
       >
         <Trash2 className="h-4 w-4" />
