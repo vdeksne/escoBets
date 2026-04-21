@@ -18,6 +18,13 @@ function formatDateFromUnix(unixSeconds: number | null | undefined) {
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
 }
 
+/** Stripe API returns this; generated Subscription typings omit it in some SDK versions. */
+function subscriptionCurrentPeriodEndUnix(sub: Stripe.Subscription | null): number | null {
+  if (!sub) return null;
+  const raw = (sub as Stripe.Subscription & { current_period_end?: unknown }).current_period_end;
+  return typeof raw === "number" ? raw : null;
+}
+
 async function getOrCreateCustomer(email: string) {
   const stripe = getStripe();
   const existing = await stripe.customers.list({ email, limit: 1 });
@@ -100,9 +107,9 @@ export async function GET() {
           recurring?.interval === "year"
             ? `${formatMoney(unit, currency)} / year`
             : `${formatMoney(unit, currency)} / month`,
-        nextBillingDate: formatDateFromUnix((sub as any)?.current_period_end),
-        status: (sub?.status ?? "inactive") as any,
-      } as any,
+        nextBillingDate: formatDateFromUnix(subscriptionCurrentPeriodEndUnix(sub)),
+        status: sub?.status ?? "inactive",
+      },
       paymentMethod: {
         brand: card?.brand ? card.brand.toUpperCase() : "Card",
         last4: card?.last4 ?? "—",
