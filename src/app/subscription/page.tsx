@@ -6,7 +6,7 @@ import { SubscriptionForm } from "@/components/landing/subscription-form";
 export default function SubscriptionPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       {/* Mobile: image as background behind form */}
       <div className="relative flex flex-1 flex-col md:hidden min-h-[60vh]">

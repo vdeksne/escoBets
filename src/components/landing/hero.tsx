@@ -1,20 +1,18 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings/defaults";
+import type { SiteSettingsPayload } from "@/types/site-settings";
 
-export function Hero() {
+type HeroProps = {
+  hero?: SiteSettingsPayload["hero"];
+};
+
+export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero }: HeroProps) {
   return (
-    <section className="relative overflow-hidden bg-black px-4 py-24 md:py-32">
-      {/* Subtle star-like speckles */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(223, 255, 0, 0.15) 0%, transparent 50%),
-            radial-gradient(circle at 80% 70%, rgba(223, 255, 0, 0.08) 0%, transparent 40%)`,
-        }}
-      />
+    <section className="relative overflow-hidden bg-transparent px-4 py-24 md:py-32">
       <div className="container relative mx-auto max-w-4xl text-center">
         {/* Logo */}
-        <div className="mb-8 flex justify-center">
+        <div className="mb-8 flex justify-center motion-safe:animate-hero-logo">
           <span className="text-3xl font-bold tracking-tight md:text-4xl">
             <svg
               width="245"
@@ -105,26 +103,28 @@ export function Hero() {
             </svg>
           </span>
         </div>
-        <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl">
-          Elite Telegram Betting{" "}
-          <span
-            className="text-[#FBFE27]"
-            style={{ textShadow: "0 0 66.667px #FBFE27" }}
-          >
-            Insights
+        <h1
+          className="mb-4 text-4xl font-bold leading-tight tracking-tight motion-safe:animate-hero-line motion-safe:[animation-delay:90ms] md:text-5xl lg:text-6xl"
+        >
+          {hero.headlineBefore}{" "}
+          <span className="text-[#FBFE27] [text-shadow:0_0_50px_rgba(251,254,39,0.45)] motion-safe:animate-hero-glow">
+            {hero.highlightWord}
           </span>
         </h1>
-        <p className="mb-6 text-xl text-white/90 md:text-2xl">
-          High-Confidence Picks. Proven Data. Real Results.
+        <p
+          className="mb-6 text-xl text-white/90 motion-safe:animate-hero-line motion-safe:[animation-delay:0.2s] md:text-2xl"
+        >
+          {hero.subheadline}
         </p>
-        <Button variant="outline" size="lg" className="mb-6" asChild>
-          <Link prefetch={false} href="/subscribe">
-            Join Now
-          </Link>
-        </Button>
-        <p className="text-sm text-white/70">
-          Exclusive picks, detailed analysis, and transparent profit/loss
-          tracking
+        <div className="mb-6 motion-safe:animate-hero-cta motion-safe:[animation-delay:0.32s]">
+          <Button variant="outline" size="lg" asChild>
+            <Link prefetch={false} href={hero.ctaHref}>
+              {hero.ctaLabel}
+            </Link>
+          </Button>
+        </div>
+        <p className="text-sm text-white/70 motion-safe:animate-hero-line motion-safe:[animation-delay:0.42s]">
+          {hero.footnote}
         </p>
       </div>
     </section>

@@ -46,15 +46,12 @@ function isFutureCalendarDay(d: Date): boolean {
 }
 
 const triggerClassName =
-  "flex h-10 w-full items-center gap-2 rounded-lg border border-white/40 bg-black/40 px-4 py-2 font-gotham text-left text-white " +
-  "transition-[border-color,box-shadow] duration-150 hover:border-white/60 focus:border-white focus:outline-none focus:ring-1 focus:ring-white/50 " +
+  "flex h-10 w-full items-center gap-2 rounded-lg border-2 border-escobets-yellow bg-black/40 px-4 py-2 font-gotham text-left text-white " +
+  "transition-[border-color,box-shadow] duration-150 hover:border-white/90 " +
+  "focus:border-escobets-yellow focus:outline-none focus:ring-2 focus:ring-escobets-yellow/45 " +
   "disabled:cursor-not-allowed disabled:opacity-50";
 
-const calendarClassName = cn(
-  "date-of-birth-calendar p-3 font-gotham text-sm text-white",
-  "[--rdp-accent-color:#DFFF00] [--rdp-accent-background-color:rgba(223,255,0,0.14)] [--rdp-today-color:#DFFF00]",
-  "[--rdp-outside-opacity:0.35] [--rdp-disabled-opacity:0.35]"
-);
+const calendarClassName = cn("date-of-birth-calendar p-3 font-gotham text-sm text-white");
 
 export interface DateOfBirthPickerProps {
   id: string;
@@ -86,7 +83,10 @@ export function DateOfBirthPicker({ id, value, onChange, disabled, className }: 
           <ChevronDown className="h-4 w-4 shrink-0 text-white/40" aria-hidden />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="max-w-[min(100vw-1.5rem,20rem)] p-0" align="start">
+      <PopoverContent
+        className="max-w-[min(100vw-1.5rem,20rem)] border-2 border-escobets-yellow bg-black/95 p-0"
+        align="start"
+      >
         <DayPicker
           mode="single"
           selected={selected}

@@ -6,7 +6,7 @@ import { VideoBackground } from "@/components/landing/video-background";
 export default function SignupPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       {/* Mobile: form on top, video section below so ball is visible */}
       <div className="relative flex flex-1 flex-col md:hidden">

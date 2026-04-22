@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function ResetPasswordPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       <div className="relative flex flex-1 flex-col md:hidden">
         <main className="relative flex flex-col items-center px-4 pt-6 pb-4 shrink-0">

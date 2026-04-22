@@ -80,9 +80,15 @@ body {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* react-day-picker (account DOB): dark glass + readable month/year caption */
+/* react-day-picker (account DOB): dark glass + brand yellow (library defaults accent to blue) */
 .date-of-birth-calendar.rdp-root {
   color: #fff;
+  /* Chevrons, month nav icons, and selected day ring use --rdp-accent-color */
+  --rdp-accent-color: #dfff00;
+  --rdp-accent-background-color: rgba(223, 255, 0, 0.14);
+  --rdp-today-color: #dfff00;
+  --rdp-outside-opacity: 0.35;
+  --rdp-disabled-opacity: 0.35;
 }
 
 .date-of-birth-calendar .rdp-month_caption {
@@ -97,8 +103,16 @@ body {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.date-of-birth-calendar .rdp-nav_button {
-  color: #fff;
+/* Focus rings: default library / system “Highlight” reads blue; use brand yellow */
+.date-of-birth-calendar .rdp-button_next:focus-visible,
+.date-of-birth-calendar .rdp-button_previous:focus-visible {
+  outline: 2px solid #dfff00;
+  outline-offset: 2px;
+}
+
+.date-of-birth-calendar .rdp-dropdown:focus-visible ~ .rdp-caption_label {
+  outline: 2px solid #dfff00 !important;
+  outline-offset: 2px;
 }
 
 .date-of-birth-calendar .rdp-outside {

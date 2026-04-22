@@ -8,7 +8,7 @@ import { SUBSCRIPTION_TELEGRAM_INVITE_URL } from "@/lib/subscription/telegram-in
 export default function SubscriptionConfirmationPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       {/* Background: subtle soccer ball image */}
       <div className="relative flex min-h-[60vh] flex-1 flex-col md:min-h-[75vh]">

@@ -6,7 +6,15 @@ const meta = {
   component: Hero,
   parameters: {
     layout: "fullscreen",
+    backgrounds: { default: "dark" },
   },
+  decorators: [
+    (Story) => (
+      <div className="min-h-screen bg-black">
+        <Story />
+      </div>
+    ),
+  ],
   tags: ["autodocs"],
 } satisfies Meta<typeof Hero>;
 

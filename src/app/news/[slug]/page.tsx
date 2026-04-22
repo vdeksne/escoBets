@@ -6,6 +6,7 @@ import type { ApiResponse } from "@/types/api";
 
 interface NewsListData {
   items: NewsArticle[];
+  categories?: string[];
 }
 
 async function getBaseUrl(): Promise<string> {
@@ -78,6 +79,10 @@ export default async function NewsArticlePage({
   const similarArticles = await fetchSimilarArticles(article.id);
 
   return (
-    <NewsArticleView article={article} similarArticles={similarArticles} />
+    <NewsArticleView
+      article={article}
+      similarArticles={similarArticles}
+      viewSlug={slug.trim().toLowerCase()}
+    />
   );
 }

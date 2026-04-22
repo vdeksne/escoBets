@@ -97,7 +97,12 @@ async function fetchNewsBySlugFromSupabase(slug: string): Promise<NewsArticle | 
     return null;
   }
 
-  return normalizeNewsArticle(data as Record<string, unknown>);
+  const row = data as Record<string, unknown>;
+  if (row.is_draft === true) {
+    return null;
+  }
+
+  return normalizeNewsArticle(row);
 }
 
 export async function GET(

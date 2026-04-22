@@ -52,7 +52,7 @@ export function AgeGate({ onVerified }: AgeGateProps) {
       </div>
 
       <div className="relative z-10 flex min-h-screen flex-col">
-        <Header variant="landing" />
+        <Header showDesktopBrand={false} />
 
         {/* Main content - centered, ball visible on right */}
         <main className="flex flex-1 flex-col items-center justify-center px-4 py-12">

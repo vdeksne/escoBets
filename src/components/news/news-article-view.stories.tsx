@@ -28,6 +28,7 @@ export const FullArticle: Story = {
   args: {
     article: fullArticle,
     similarArticles,
+    viewSlug: fullArticle.slug ?? "soccer-betting-guide-2026",
   },
   decorators: [
     (Story) => (
@@ -42,6 +43,7 @@ export const BasicArticle: Story = {
   args: {
     article: MOCK_NEWS_ARTICLES[1],
     similarArticles: similarArticles.slice(0, 2),
+    viewSlug: MOCK_NEWS_ARTICLES[1].slug ?? "story",
   },
   decorators: [
     (Story) => (

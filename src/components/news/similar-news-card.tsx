@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, Eye, ArrowRight } from "lucide-react";
 import type { NewsArticle } from "@/types/news";
+import { formatEngagementCount } from "@/lib/news/format-count";
 import { cn } from "@/lib/utils";
 
 interface SimilarNewsCardProps {
@@ -14,11 +15,6 @@ interface SimilarNewsCardProps {
 export function SimilarNewsCard({ article, className }: SimilarNewsCardProps) {
   const likes = article.likes ?? 0;
   const views = article.views ?? 0;
-
-  const formatCount = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return String(n);
-  };
 
   return (
     <article
@@ -54,11 +50,11 @@ export function SimilarNewsCard({ article, className }: SimilarNewsCardProps) {
         <div className="mt-4 flex items-center gap-4">
           <span className="flex items-center gap-1.5 font-gotham text-sm text-white">
             <Heart className="h-4 w-4 shrink-0 fill-escobets-yellow text-escobets-yellow" />
-            {formatCount(likes)}
+            {formatEngagementCount(likes)}
           </span>
           <span className="flex items-center gap-1.5 font-gotham text-sm text-white">
             <Eye className="h-4 w-4 shrink-0" />
-            {formatCount(views)}
+            {formatEngagementCount(views)}
           </span>
         </div>
         <Link

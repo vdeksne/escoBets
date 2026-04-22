@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Pencil, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DateOfBirthPicker } from "@/components/account/date-of-birth-picker";
 import {
@@ -176,18 +176,9 @@ export function ProfileUpdateForm({
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        <h2 className="font-gotham text-lg font-semibold text-white">
-          Profile Update
-        </h2>
-        <button
-          type="button"
-          className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"
-          aria-label="Edit"
-        >
-          <Pencil className="h-5 w-5" />
-        </button>
-      </div>
+      <h2 className="font-gotham text-lg font-semibold text-white">
+        Profile Update
+      </h2>
 
       {/* Avatar + Upload/Delete */}
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">

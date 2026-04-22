@@ -6,6 +6,8 @@ import type { ApiError, ApiSuccess } from "@/types/api";
 
 interface NewsListData {
   items: NewsArticle[];
+  /** Distinct non-empty category labels from all published items (for filter UI). */
+  categories: string[];
   pagination: {
     page: number;
     pageSize: number;
@@ -117,7 +119,9 @@ async function fetchNewsFromSupabase(): Promise<NewsArticle[] | null> {
     return null;
   }
 
-  const normalized = data
+  const visible = data.filter((row: Record<string, unknown>) => row.is_draft !== true);
+
+  const normalized = visible
     .map((row) =>
       normalizeNewsArticle(
         (row && typeof row === "object" ? row : {}) as Record<string, unknown>
@@ -153,20 +157,39 @@ export async function GET(
 
   const search = (url.searchParams.get("search") ?? "").trim().toLowerCase();
   const tag = (url.searchParams.get("tag") ?? "").trim().toLowerCase();
+  const categoryParam = (url.searchParams.get("category") ?? "").trim();
 
   try {
     const dbNews = await fetchNewsFromSupabase();
     const allItems = dbNews ?? MOCK_NEWS_ARTICLES;
 
+    const categories = [
+      ...new Set(
+        allItems
+          .map((a) => (a.category ?? "").trim())
+          .filter((c): c is string => c.length > 0)
+      ),
+    ].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+    const categoryLower = categoryParam.toLowerCase();
     const filtered = allItems.filter((article) => {
+      const h = article.headline.toLowerCase();
+      const ex = (article.excerpt ?? "").toLowerCase();
+      const cat = (article.category ?? "").toLowerCase();
+      const tagStr = article.tags.join(" ").toLowerCase();
       const matchesSearch =
         search.length === 0 ||
-        article.headline.toLowerCase().includes(search) ||
-        (article.excerpt ?? "").toLowerCase().includes(search);
+        h.includes(search) ||
+        ex.includes(search) ||
+        cat.includes(search) ||
+        tagStr.includes(search) ||
+        article.tags.some((t) => t.toLowerCase().includes(search));
       const matchesTag =
         tag.length === 0 ||
         article.tags.some((articleTag) => articleTag.toLowerCase() === tag);
-      return matchesSearch && matchesTag;
+      const matchesCategory =
+        categoryParam.length === 0 || (article.category ?? "").trim().toLowerCase() === categoryLower;
+      return matchesSearch && matchesTag && matchesCategory;
     });
 
     const total = filtered.length;
@@ -177,6 +200,7 @@ export async function GET(
 
     return successResponse<NewsListData>({
       items,
+      categories,
       pagination: {
         page: safePage,
         pageSize,

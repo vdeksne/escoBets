@@ -46,7 +46,13 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
   }, [posts, search, statusFilter]);
 
   const statusCounts = useMemo(() => {
-    const counts = { All: posts.length, Live: 0, Completed: 0, Pending: 0, Canceled: 0 };
+    const counts: Record<"All" | NewsPostStatus, number> = {
+      All: posts.length,
+      Live: 0,
+      Completed: 0,
+      Pending: 0,
+      Canceled: 0,
+    };
     posts.forEach((p) => {
       counts[p.status]++;
     });
@@ -61,21 +67,27 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" showAdminLinks />
+      <Header />
       <main className="flex-1 px-4 py-8 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
-          {/* Title and actions */}
+          <nav className="mb-2 font-gotham text-xs text-white/45" aria-label="Breadcrumb">
+            <Link href="/admin" className="text-white/60 transition hover:text-escobets-yellow">
+              Control centre
+            </Link>
+            <span className="mx-1.5">/</span>
+            <span className="text-white/80">News</span>
+          </nav>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="font-gotham text-2xl font-bold uppercase tracking-tight text-white md:text-3xl">
-              News and Predictions Admin
+              News and Predictions
             </h1>
             <div className="flex items-center gap-2">
               <Link
-                href="/updates/new"
+                href="/admin/news/new"
                 className="inline-flex items-center gap-2 rounded-lg border-2 border-escobets-yellow bg-transparent px-4 py-2 font-gotham font-medium text-escobets-yellow transition hover:bg-escobets-yellow/10"
               >
                 <span className="text-lg leading-none">+</span>
-                Add New
+                New article
               </Link>
               <button
                 type="button"
@@ -90,10 +102,10 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
           {/* Stats cards */}
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "Total Posts", value: String(stats.totalPosts) },
-              { label: "New Posts", value: String(stats.newPosts) },
-              { label: "Live Posts", value: String(stats.livePosts) },
-              { label: "Total Views", value: stats.totalViews },
+              { label: "Total posts", value: String(stats.totalPosts) },
+              { label: "Drafts", value: String(stats.newPosts) },
+              { label: "Published", value: String(stats.livePosts) },
+              { label: "Total views", value: stats.totalViews },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -115,8 +127,11 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
           {/* Filter tabs and toolbar */}
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4 sm:border-0 sm:pb-0">
-              {(["All", "Completed", "Pending", "Canceled"] as const).map((status) => {
-                const label = status === "All" ? `All posts (${statusCounts.All})` : status;
+              {(["All", "Live", "Pending", "Completed", "Canceled"] as const).map((status) => {
+                const label =
+                  status === "All"
+                    ? `All posts (${statusCounts.All})`
+                    : `${status} (${statusCounts[status]})`;
                 return (
                   <button
                     key={status}
@@ -212,7 +227,10 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/news/${encodeURIComponent(post.id)}/edit`}
+                        className="group/title flex items-center gap-3"
+                      >
                         <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded bg-white/10">
                           <Image
                             src={post.thumbnailUrl}
@@ -222,8 +240,10 @@ export function UpdatesView({ posts, stats }: UpdatesViewProps) {
                             sizes="56px"
                           />
                         </div>
-                        <span className="font-medium text-white">{post.title}</span>
-                      </div>
+                        <span className="font-medium text-white underline-offset-2 group-hover/title:text-escobets-yellow group-hover/title:underline">
+                          {post.title}
+                        </span>
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-white/80">{post.date}</td>
                     <td className="px-4 py-3">

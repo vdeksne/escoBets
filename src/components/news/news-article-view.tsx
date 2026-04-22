@@ -3,28 +3,40 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Eye, MessageCircle, ChevronDown, ArrowRight } from "lucide-react";
+import { ChevronDown, ArrowRight } from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { SimilarNewsCard } from "./similar-news-card";
+import { NewsArticleEngagement } from "./news-article-engagement";
 import type { NewsArticle } from "@/types/news";
 
 interface NewsArticleViewProps {
   article: NewsArticle;
   similarArticles: NewsArticle[];
+  /** Slug from the URL — used for engagement APIs when the article record omits it */
+  viewSlug: string;
 }
 
-function formatCount(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
+function looksLikeHtmlFragment(s: string): boolean {
+  const t = s.trim();
+  if (!t) return false;
+  return /^<[\s\S]+>/.test(t) || t.includes("<p") || t.includes("<h1") || t.includes("<h2");
 }
 
-export function NewsArticleView({ article, similarArticles }: NewsArticleViewProps) {
+function ArticleSectionContent({ content }: { content: string }) {
+  if (looksLikeHtmlFragment(content)) {
+    return (
+      <div
+        className="news-article-html mt-3 font-gotham text-white/90 leading-relaxed [&_a]:text-escobets-yellow [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-escobets-yellow [&_blockquote]:pl-4 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-white/10 [&_code]:px-1 [&_h1]:mt-4 [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:mt-3 [&_h2]:text-xl [&_h2]:font-bold [&_h3]:mt-2 [&_h3]:text-lg [&_h3]:font-bold [&_img]:my-4 [&_img]:max-h-[480px] [&_img]:w-full [&_img]:rounded-lg [&_img]:object-cover [&_li]:my-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-white/10 [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6"
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+  return <p className="mt-3 font-gotham text-white/90 leading-relaxed">{content}</p>;
+}
+
+export function NewsArticleView({ article, similarArticles, viewSlug }: NewsArticleViewProps) {
   const [showFullArticle, setShowFullArticle] = useState(false);
-  const likes = article.likes ?? 0;
-  const views = article.views ?? 0;
-  const comments = article.comments ?? 0;
-
   const body = article.body ?? [];
   const visibleSectionCount = showFullArticle
     ? body.length
@@ -33,7 +45,7 @@ export function NewsArticleView({ article, similarArticles }: NewsArticleViewPro
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       {/* Hero */}
       <section className="relative h-[50vh] min-h-[300px] w-full overflow-hidden md:h-[60vh]">
@@ -66,12 +78,12 @@ export function NewsArticleView({ article, similarArticles }: NewsArticleViewPro
                 <div className="space-y-8">
                   {visibleSections.map((section, i) => (
                     <section key={i}>
-                      <h2 className="font-gotham text-xl font-bold text-white md:text-2xl">
-                        {section.heading}
-                      </h2>
-                      <p className="mt-3 font-gotham text-white/90 leading-relaxed">
-                        {section.content}
-                      </p>
+                      {section.heading ? (
+                        <h2 className="font-gotham text-xl font-bold text-white md:text-2xl">
+                          {section.heading}
+                        </h2>
+                      ) : null}
+                      <ArticleSectionContent content={section.content} />
                     </section>
                   ))}
                 </div>
@@ -104,21 +116,12 @@ export function NewsArticleView({ article, similarArticles }: NewsArticleViewPro
 
             {/* Right: Sidebar */}
             <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
-              {/* Interaction metrics */}
-              <div className="flex flex-wrap items-center gap-6 rounded-xl border border-white/10 bg-escobets-gray-card p-4">
-                <span className="flex items-center gap-2 font-gotham text-sm text-white">
-                  <Heart className="h-5 w-5 shrink-0 fill-escobets-yellow text-escobets-yellow" />
-                  {formatCount(likes)}
-                </span>
-                <span className="flex items-center gap-2 font-gotham text-sm text-white">
-                  <Eye className="h-5 w-5 shrink-0" />
-                  {formatCount(views)}
-                </span>
-                <span className="flex items-center gap-2 font-gotham text-sm text-white">
-                  <MessageCircle className="h-5 w-5 shrink-0" />
-                  {comments}
-                </span>
-              </div>
+              <NewsArticleEngagement
+                articleSlug={article.slug?.trim() || viewSlug}
+                initialLikes={article.likes ?? 0}
+                initialViews={article.views ?? 0}
+                initialComments={article.comments ?? 0}
+              />
 
               {/* Metadata */}
               <div className="rounded-xl border border-white/10 bg-escobets-gray-card p-4">

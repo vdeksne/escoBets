@@ -47,7 +47,7 @@ export default function AdminUserProfitTrackerEntriesPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" showAdminLinks />
+      <Header />
       <main className="flex-1 px-4 py-8">
         <div className="mx-auto max-w-2xl">
           <Link

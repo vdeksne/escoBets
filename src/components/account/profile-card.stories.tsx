@@ -19,8 +19,6 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     profile: MOCK_PROFILE,
-    onEdit: () => console.log("Edit"),
-    onShare: () => console.log("Share"),
     onAddSocial: () => console.log("Add social"),
   },
   decorators: [

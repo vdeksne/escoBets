@@ -10,12 +10,25 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
 import { cn } from "@/lib/utils";
 
-/** Match mockup: 1.333px #FFF border, pill radius; glass fill (no solid grey). Yellow ring on focus. */
+/** Match mockup: 1.333px #FFF border, pill radius; glass fill; soft autofill like signup. */
 const loginInputClassName =
   "rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent text-white " +
   "placeholder:text-white/80 transition-[border-color,box-shadow] duration-150 " +
+  "backdrop-blur-[2px] " +
   "focus:border-escobets-yellow focus:outline-none " +
-  "focus:ring-2 focus:ring-escobets-yellow/35 focus:ring-offset-0";
+  "focus:ring-2 focus:ring-escobets-yellow/35 focus:ring-offset-0 " +
+  "[&:-webkit-autofill]:!shadow-[inset_0_0_0_1000px_rgba(0,0,0,0.12)] " +
+  "[&:-webkit-autofill]:![-webkit-text-fill-color:#fff] [&:-webkit-autofill]:![caret-color:#fff] " +
+  "[&:-webkit-autofill]:![transition:background-color_50000s_ease-out_0s]";
+
+const passwordToggleBtnClass =
+  "absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center " +
+  "rounded-md bg-transparent text-escobets-yellow " +
+  "transition hover:text-white " +
+  "focus-visible:outline focus-visible:ring-2 focus-visible:ring-escobets-yellow/50";
+
+const passwordToggleIconClass =
+  "h-[1.15rem] w-[1.15rem] stroke-[2.5] drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]";
 
 /** Shown after /auth/telegram redirect when server env is incomplete (e.g. Vercel). */
 const TELEGRAM_NOT_CONFIGURED_MESSAGE =
@@ -174,18 +187,18 @@ export function LoginForm({
             autoComplete="current-password"
             aria-label="Password"
             required
-            className={cn(loginInputClassName, "pr-10")}
+            className={cn(loginInputClassName, "pr-12")}
           />
           <button
             type="button"
             onClick={() => setShowPassword((p) => !p)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-escobets-yellow hover:opacity-80"
+            className={passwordToggleBtnClass}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5" />
+              <EyeOff className={passwordToggleIconClass} />
             ) : (
-              <Eye className="h-5 w-5" />
+              <Eye className={passwordToggleIconClass} />
             )}
           </button>
         </div>

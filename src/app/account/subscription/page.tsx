@@ -39,7 +39,7 @@ export default function AccountSubscriptionPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
 
       <main className="flex-1 px-4 py-8">
         <div className="mx-auto max-w-4xl">
@@ -54,7 +54,7 @@ export default function AccountSubscriptionPage() {
                 onClick={openPortal}
                 className="mt-5 rounded-lg bg-escobets-yellow px-4 py-2 font-gotham font-medium text-black hover:bg-escobets-yellow/90"
               >
-                Open Stripe billing portal
+                Open billing portal
               </button>
             </div>
           ) : !data ? (

@@ -11,6 +11,28 @@ import { TermsAcceptance } from "@/components/legal/terms-acceptance";
 import { cn } from "@/lib/utils";
 import type { ApiResponse } from "@/types/api";
 
+/** Same glass look for every field, including when WebKit autofill kicks in (no solid grey block). */
+const signupInputClass = cn(
+  "rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent",
+  "text-white placeholder:text-white/70",
+  "backdrop-blur-[2px]",
+  "focus:border-[#FFF] focus:ring-0",
+  // Match autofill to the same sheer overlay as unfilled “transparent” fields
+  "[&:-webkit-autofill]:!shadow-[inset_0_0_0_1000px_rgba(0,0,0,0.12)]",
+  "[&:-webkit-autofill]:![-webkit-text-fill-color:#fff] [&:-webkit-autofill]:![caret-color:#fff]",
+  "[&:-webkit-autofill]:![transition:background-color_50000s_ease-out_0s]"
+);
+
+const passwordToggleBtnClass = cn(
+  "absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center",
+  "rounded-md bg-transparent text-escobets-yellow",
+  "transition hover:text-white",
+  "focus-visible:outline focus-visible:ring-2 focus-visible:ring-escobets-yellow/50"
+);
+
+const passwordToggleIconClass =
+  "h-[1.15rem] w-[1.15rem] stroke-[2.5] drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)]";
+
 export function SignupForm({ className }: { className?: string }) {
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
@@ -106,7 +128,7 @@ export function SignupForm({ className }: { className?: string }) {
           autoComplete="username"
           aria-label="Username"
           required
-          className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+          className={signupInputClass}
         />
         <Input
           type="email"
@@ -116,7 +138,7 @@ export function SignupForm({ className }: { className?: string }) {
           autoComplete="email"
           aria-label="Email"
           required
-          className="rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+          className={signupInputClass}
         />
         <div className="relative">
           <Input
@@ -127,18 +149,18 @@ export function SignupForm({ className }: { className?: string }) {
             autoComplete="new-password"
             aria-label="Password"
             required
-            className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+            className={cn("pr-12", signupInputClass)}
           />
           <button
             type="button"
             onClick={() => setShowPassword((p) => !p)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-escobets-yellow hover:opacity-80"
+            className={passwordToggleBtnClass}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5" />
+              <EyeOff className={passwordToggleIconClass} />
             ) : (
-              <Eye className="h-5 w-5" />
+              <Eye className={passwordToggleIconClass} />
             )}
           </button>
         </div>
@@ -151,18 +173,18 @@ export function SignupForm({ className }: { className?: string }) {
             autoComplete="new-password"
             aria-label="Confirm Password"
             required
-            className="pr-10 rounded-[0.99975rem] border-[1.333px] border-[#FFF] bg-transparent placeholder:text-white/70 focus:border-[#FFF] focus:ring-0"
+            className={cn("pr-12", signupInputClass)}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword((p) => !p)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-escobets-yellow hover:opacity-80"
+            className={passwordToggleBtnClass}
             aria-label={showConfirmPassword ? "Hide password" : "Show password"}
           >
             {showConfirmPassword ? (
-              <EyeOff className="h-5 w-5" />
+              <EyeOff className={passwordToggleIconClass} />
             ) : (
-              <Eye className="h-5 w-5" />
+              <Eye className={passwordToggleIconClass} />
             )}
           </button>
         </div>

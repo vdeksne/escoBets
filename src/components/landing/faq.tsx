@@ -6,35 +6,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings/defaults";
+import type { SiteFaqItem } from "@/types/site-settings";
 
-const items = [
-  {
-    q: "What betting markets do you cover?",
-    a: "We cover major football leagues, international tournaments, and select other sports. Our focus is on markets where we have proven edge and transparent tracking.",
-  },
-  {
-    q: "How often are tips posted?",
-    a: "High-confidence tips are posted daily in our private Telegram channel. You get priority notifications so you never miss a pick.",
-  },
-  {
-    q: "How accurate are your tips?",
-    a: "We publish full P&L and track every pick. Our dashboard shows real results—no cherry-picking. Accuracy varies by market; we focus on long-term value.",
-  },
-  {
-    q: "Can I pause or cancel my subscription?",
-    a: "Yes. You can pause or cancel anytime from your account. No long-term commitment required.",
-  },
-  {
-    q: "What is the referral program?",
-    a: "Refer friends and earn rewards when they subscribe. Details and tiers are available in your account dashboard.",
-  },
-  {
-    q: "Do you offer 24/7 consultations?",
-    a: "Premium members get access to our consultation channel for strategy and bankroll questions. This is a new feature we're rolling out.",
-  },
-];
+type FAQProps = {
+  intro?: string;
+  items?: SiteFaqItem[];
+};
 
-export function FAQ() {
+export function FAQ({
+  intro = DEFAULT_SITE_SETTINGS.faq.intro,
+  items = DEFAULT_SITE_SETTINGS.faq.items,
+}: FAQProps) {
   return (
     <section className="px-4 py-16 md:py-24">
       <div className="container mx-auto max-w-4xl">
@@ -48,8 +31,7 @@ export function FAQ() {
           </span>
         </h2>
         <p className="mb-10 text-center text-white/70">
-          {"We're"} gonna say it — these {"aren't"} frequently asked, but {"we've"}{" "}
-          added them here in case you were wondering.
+          {intro}
         </p>
         <Accordion type="single" collapsible className="flex flex-col items-center gap-4">
           {items.map((item, i) => (

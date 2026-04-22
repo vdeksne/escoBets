@@ -109,7 +109,7 @@ export function InvoiceTable({
             Invoices
           </h2>
           <p className="mt-1 font-gotham text-sm text-white/60">
-            Download PDFs securely from Stripe.
+            Download PDFs from your billing portal when available.
           </p>
         </div>
       </div>

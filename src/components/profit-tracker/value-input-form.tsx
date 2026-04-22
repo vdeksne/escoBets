@@ -37,7 +37,7 @@ export function ValueInputForm({
     e.preventDefault();
     const n = Number.parseFloat(amount);
     if (!Number.isFinite(n) || n < 0) return;
-    addProfitTrackerEntry(
+    void addProfitTrackerEntry(
       {
         name: entryName.trim() || undefined,
         amount: n,

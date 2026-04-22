@@ -40,10 +40,17 @@ telegramAvatarRemotePatterns.push({
   pathname: "/**",
 });
 
+/** X/Twitter CDN (profile + media from API v2). */
+const xImagePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+  { protocol: "https", hostname: "pbs.twimg.com", pathname: "/**" },
+  { protocol: "https", hostname: "video.twimg.com", pathname: "/**" },
+];
+
 const mergedImages: NextConfig["images"] = {
   remotePatterns: [
     ...(supabaseImageRemote?.remotePatterns ?? []),
     ...telegramAvatarRemotePatterns,
+    ...xImagePatterns,
   ],
 };
 
@@ -55,6 +62,9 @@ const nextConfig: NextConfig = {
   // Browsers request /favicon.ico by default; we only ship SVG under public/images
   async rewrites() {
     return [{ source: "/favicon.ico", destination: "/images/EscoBets_Logo.svg" }];
+  },
+  async redirects() {
+    return [{ source: "/subscribe", destination: "/subscription", permanent: true }];
   },
   images: mergedImages,
 };

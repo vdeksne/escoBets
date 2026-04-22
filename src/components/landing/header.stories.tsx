@@ -10,10 +10,10 @@ const meta = {
   },
   tags: ["autodocs"],
   argTypes: {
-    variant: {
-      control: "radio",
-      options: ["landing", "withLogo"],
-      description: "landing = main page (no logo on desktop). withLogo = inner pages (logo left, links to home)",
+    showDesktopBrand: {
+      control: "boolean",
+      description:
+        "When false, desktop hides the small header logo but keeps the same column width (e.g. age gate).",
     },
   },
 } satisfies Meta<typeof Header>;
@@ -23,12 +23,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { variant: "landing" },
+  args: { showDesktopBrand: true },
 };
 
-export const WithLogo: Story = {
-  args: { variant: "withLogo" },
+export const HideDesktopBrand: Story = {
+  args: { showDesktopBrand: false },
   parameters: {
-    description: "Use on login and other inner pages. Logo on left links to home.",
+    description: "Age gate: no small logo in the bar; layout matches the default so it does not jump.",
   },
 };

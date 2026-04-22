@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, Landmark, Lock, Send } from "lucide-react";
+import { Check, ChevronDown, Landmark, Lock, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TermsAcceptance } from "@/components/legal/terms-acceptance";
@@ -14,6 +14,24 @@ import {
 
 type PlanId = "monthly" | "annual";
 type Currency = "GBP" | "EUR";
+
+type PaymentMethodId = "secure-checkout" | "telegram" | "bank";
+
+function RadioRing({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={cn(
+        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+        selected ? "border-escobets-yellow" : "border-white/25",
+      )}
+      aria-hidden
+    >
+      {selected ? (
+        <span className="h-1.5 w-1.5 rounded-full bg-escobets-yellow" />
+      ) : null}
+    </span>
+  );
+}
 
 const PLANS: {
   id: PlanId;
@@ -137,6 +155,11 @@ export function SubscriptionForm({ className }: { className?: string }) {
   const [plan, setPlan] = React.useState<PlanId>("annual");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [currency, setCurrency] = React.useState<Currency>("GBP");
+  const [paymentMethod, setPaymentMethod] =
+    React.useState<PaymentMethodId>("secure-checkout");
+  const [openPaymentDetail, setOpenPaymentDetail] = React.useState<
+    "secure" | "telegram" | "bank" | null
+  >(null);
 
   React.useEffect(() => {
     setCurrency(getDefaultCurrency());
@@ -162,9 +185,15 @@ export function SubscriptionForm({ className }: { className?: string }) {
   );
 
   const goToHostedCheckout = React.useCallback(() => {
-    if (!termsAccepted || !checkoutUrl) return;
+    if (!termsAccepted || !checkoutUrl || paymentMethod !== "secure-checkout")
+      return;
     window.location.assign(checkoutUrl);
-  }, [termsAccepted, checkoutUrl]);
+  }, [termsAccepted, checkoutUrl, paymentMethod]);
+
+  const canUseHostedCheckout =
+    termsAccepted &&
+    !!checkoutUrl &&
+    paymentMethod === "secure-checkout";
 
   return (
     <div className={cn("mx-auto w-full max-w-5xl px-1 sm:px-0", className)}>
@@ -308,161 +337,293 @@ export function SubscriptionForm({ className }: { className?: string }) {
           </div>
 
           <div className="space-y-6">
-            <div className={cn(readPanel, "p-5 sm:p-6")}>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <h2 className="font-gotham text-lg font-semibold tracking-tight text-white">
-                  Secure checkout
-                </h2>
-                <span className="w-fit rounded-full border border-white/15 bg-black/35 px-3 py-1 font-gotham text-[11px] font-medium tracking-wide text-white/75">
-                  Powered by Stripe
-                </span>
-              </div>
-              <p className="mt-2 font-gotham text-sm font-normal leading-relaxed text-white/82">
-                You&apos;ll continue in this browser window to a secure Stripe
-                checkout. If the button stays disabled, add the Payment Link
-                URLs in environment variables and redeploy.
-              </p>
-              <p className="mt-3 font-gotham text-xs leading-relaxed text-white/70">
-                After payment, Stripe should redirect you back to{" "}
-                <code className="rounded border border-white/15 bg-black/40 px-1.5 py-0.5 font-mono text-[11px] text-white/85">
-                  /subscription/confirmation
-                </code>
-                . If you still land on Stripe&apos;s “Thanks for subscribing”
-                page, open your Payment Link in Stripe and set{" "}
-                <span className="font-medium text-white/85">After payment → Redirect</span>.
-              </p>
-              {!checkoutUrl ? (
-                <div
-                  role="status"
-                  className="mt-4 rounded-lg border border-amber-400/35 bg-amber-950/85 px-3.5 py-3 font-gotham text-sm leading-snug text-amber-50 shadow-inner shadow-black/20"
-                >
-                  <p className="font-medium text-amber-100">
-                    Checkout URL not configured
-                  </p>
-                  <p className="mt-2 text-[13px] text-amber-50/95">
-                    Set{" "}
-                    <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
-                      NEXT_PUBLIC_SUBSCRIPTION_STRIPE_PAYMENT_LINK_URL_MONTHLY
-                    </code>{" "}
-                    and{" "}
-                    <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
-                      NEXT_PUBLIC_SUBSCRIPTION_STRIPE_PAYMENT_LINK_URL_ANNUAL
-                    </code>{" "}
-                    .
-                    in{" "}
-                    <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
-                      .env.local
-                    </code>{" "}
-                    or Vercel, then redeploy.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
+            <p className="font-gotham text-xs font-medium uppercase tracking-wide text-white/45">
+              Payment method
+            </p>
             <div
-              className={cn(
-                readPanel,
-                "border-dashed border-sky-400/25 bg-[#070b10]/95 p-5 sm:p-6",
-              )}
+              role="radiogroup"
+              aria-label="Payment method"
+              className="space-y-3"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-sky-500/20 bg-sky-950/60">
-                  <Send className="h-5 w-5 text-sky-300" aria-hidden />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-gotham text-lg font-semibold tracking-tight text-white">
-                    Telegram payment
-                  </h2>
-                  <p className="mt-2 font-gotham text-sm font-normal leading-relaxed text-white/82">
-                    <span className="font-medium text-white">Coming soon.</span>{" "}
-                    We plan to offer{" "}
-                    <a
-                      href={TELEGRAM_PAYMENTS_DOCS_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-escobets-yellow underline decoration-escobets-yellow/60 underline-offset-[3px] hover:text-[#f5f877] hover:decoration-escobets-yellow"
-                    >
-                      Telegram Bot Payments
-                    </a>{" "}
-                    (in-app invoice). You still need a provider token from a PSP
-                    - same compliance story as web checkout.
-                  </p>
-                  <Button
+              <div
+                className={cn(
+                  "overflow-hidden rounded-xl border transition-colors",
+                  paymentMethod === "secure-checkout"
+                    ? "border border-escobets-yellow/40 bg-escobets-yellow/[0.04]"
+                    : "border border-white/10 bg-[#0a0a0a]/95",
+                )}
+              >
+                <div className="flex min-h-[3.25rem]">
+                  <button
                     type="button"
-                    variant="outline"
-                    disabled
-                    className="mt-4 w-full rounded-[0.83331rem] border-white/30 bg-black/30 font-gotham text-white/65 sm:w-auto sm:min-w-[14rem]"
+                    role="radio"
+                    aria-checked={paymentMethod === "secure-checkout"}
+                    onClick={() => setPaymentMethod("secure-checkout")}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3.5 text-left"
                   >
-                    Pay in Telegram - coming soon
-                  </Button>
-                  {telegramBotUrl ? (
-                    <p className="mt-3 font-gotham text-[13px] leading-snug text-white/72">
-                      Dev / support:{" "}
+                    <RadioRing selected={paymentMethod === "secure-checkout"} />
+                    <div className="min-w-0">
+                      <p className="font-gotham text-base font-semibold text-white">
+                        Secure checkout
+                      </p>
+                      <p className="mt-0.5 font-gotham text-xs text-white/40">
+                        Card or wallet — hosted by our partner
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenPaymentDetail((o) => (o === "secure" ? null : "secure"))
+                    }
+                    className="shrink-0 border-l border-white/10 px-3 text-white/40 transition-colors hover:text-white/70"
+                    aria-expanded={openPaymentDetail === "secure"}
+                    aria-label={
+                      openPaymentDetail === "secure"
+                        ? "Hide details for secure checkout"
+                        : "Show details for secure checkout"
+                    }
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 transition-transform duration-200",
+                        openPaymentDetail === "secure" && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
+                {openPaymentDetail === "secure" ? (
+                  <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-3 sm:px-5">
+                    <p className="font-gotham text-sm font-normal leading-relaxed text-white/80">
+                      You&apos;ll continue in this browser to our payment
+                      partner&apos;s hosted checkout: a separate, encrypted page
+                      where you enter card or wallet details. They process the
+                      charge, run standard fraud checks, and only pass us what
+                      we need to turn on your membership—not your full card
+                      number. If the button stays disabled, add the hosted
+                      checkout URLs in your environment variables and redeploy.
+                    </p>
+                    <p className="font-gotham text-xs leading-relaxed text-white/60">
+                      After a successful payment, you should be sent back to{" "}
+                      <code className="rounded border border-white/15 bg-black/40 px-1.5 py-0.5 font-mono text-[11px] text-white/85">
+                        /subscription/confirmation
+                      </code>
+                      . If you land on the provider&apos;s generic “thank you”
+                      page instead, open your hosted payment link in their
+                      dashboard and set{" "}
+                      <span className="font-medium text-white/80">
+                        After payment → Redirect
+                      </span>{" "}
+                      to our confirmation URL.
+                    </p>
+                    {!checkoutUrl ? (
+                      <div
+                        role="status"
+                        className="rounded-lg border border-amber-400/35 bg-amber-950/85 px-3.5 py-3 font-gotham text-sm leading-snug text-amber-50 shadow-inner shadow-black/20"
+                      >
+                        <p className="font-medium text-amber-100">
+                          Checkout URL not configured
+                        </p>
+                        <p className="mt-2 text-[13px] text-amber-50/95">
+                          Set{" "}
+                          <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
+                            NEXT_PUBLIC_SUBSCRIPTION_STRIPE_PAYMENT_LINK_URL_MONTHLY
+                          </code>{" "}
+                          and{" "}
+                          <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
+                            NEXT_PUBLIC_SUBSCRIPTION_STRIPE_PAYMENT_LINK_URL_ANNUAL
+                          </code>{" "}
+                          .
+                          in{" "}
+                          <code className="rounded border border-amber-500/25 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-amber-100 sm:text-xs">
+                            .env.local
+                          </code>{" "}
+                          or Vercel, then redeploy.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+
+              <div
+                className={cn(
+                  "overflow-hidden rounded-xl border transition-colors",
+                  paymentMethod === "telegram"
+                    ? "border border-escobets-yellow/40 bg-escobets-yellow/[0.04]"
+                    : "border border-dashed border-sky-500/20 bg-[#070b10]/80",
+                )}
+              >
+                <div className="flex min-h-[3.25rem]">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={paymentMethod === "telegram"}
+                    onClick={() => setPaymentMethod("telegram")}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3.5 text-left"
+                  >
+                    <RadioRing selected={paymentMethod === "telegram"} />
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-sky-500/25 bg-sky-950/50">
+                        <Send className="h-3.5 w-3.5 text-sky-300" aria-hidden />
+                      </div>
+                      <p className="min-w-0 font-gotham text-base font-semibold text-white">
+                        Telegram payment
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenPaymentDetail((o) => (o === "telegram" ? null : "telegram"))
+                    }
+                    className="shrink-0 border-l border-white/10 px-3 text-white/40 transition-colors hover:text-white/70"
+                    aria-expanded={openPaymentDetail === "telegram"}
+                    aria-label={
+                      openPaymentDetail === "telegram"
+                        ? "Hide details for Telegram payment"
+                        : "Show details for Telegram payment"
+                    }
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 transition-transform duration-200",
+                        openPaymentDetail === "telegram" && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
+                {openPaymentDetail === "telegram" ? (
+                  <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-3 sm:px-5">
+                    <p className="font-gotham text-sm font-normal leading-relaxed text-white/80">
+                      <span className="font-medium text-white/95">Coming soon.</span>{" "}
+                      We plan to offer{" "}
                       <a
-                        href={telegramBotUrl}
+                        href={TELEGRAM_PAYMENTS_DOCS_URL}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="font-medium text-escobets-yellow underline decoration-escobets-yellow/60 underline-offset-[3px] hover:text-[#f5f877] hover:decoration-escobets-yellow"
+                      >
+                        Telegram Bot Payments
+                      </a>{" "}
+                      (in-app invoice). You still need a provider token from a
+                      PSP - same compliance story as web checkout.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled
+                      className="w-full rounded-[0.83331rem] border-white/30 bg-black/30 font-gotham text-white/65 sm:w-auto sm:min-w-[14rem]"
+                    >
+                      Pay in Telegram - coming soon
+                    </Button>
+                    {telegramBotUrl ? (
+                      <p className="font-gotham text-[13px] leading-snug text-white/65">
+                        Dev / support:{" "}
+                        <a
+                          href={telegramBotUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-escobets-yellow underline hover:text-[#f5f877]"
+                        >
+                          Open bot in Telegram
+                        </a>{" "}
+                        <span className="text-white/50">
+                          (deep link only - does not start payment yet).
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="font-gotham text-[13px] leading-snug text-white/65">
+                        Optional: set{" "}
+                        <code className="rounded border border-white/15 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-white/90 sm:text-xs">
+                          NEXT_PUBLIC_SUBSCRIPTION_TELEGRAM_PAY_BOT_USERNAME
+                        </code>{" "}
+                        for an “open bot” test link.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              <div
+                className={cn(
+                  "overflow-hidden rounded-xl border transition-colors",
+                  paymentMethod === "bank"
+                    ? "border border-escobets-yellow/40 bg-escobets-yellow/[0.04]"
+                    : "border border-dashed border-emerald-500/20 bg-[#07100b]/80",
+                )}
+              >
+                <div className="flex min-h-[3.25rem]">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={paymentMethod === "bank"}
+                    onClick={() => setPaymentMethod("bank")}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3.5 text-left"
+                  >
+                    <RadioRing selected={paymentMethod === "bank"} />
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-emerald-500/25 bg-emerald-950/50">
+                        <Landmark
+                          className="h-3.5 w-3.5 text-emerald-200"
+                          aria-hidden
+                        />
+                      </div>
+                      <p className="min-w-0 font-gotham text-base font-semibold text-white">
+                        Manual bank transfer
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenPaymentDetail((o) => (o === "bank" ? null : "bank"))
+                    }
+                    className="shrink-0 border-l border-white/10 px-3 text-white/40 transition-colors hover:text-white/70"
+                    aria-expanded={openPaymentDetail === "bank"}
+                    aria-label={
+                      openPaymentDetail === "bank"
+                        ? "Hide details for bank transfer"
+                        : "Show details for bank transfer"
+                    }
+                  >
+                    <ChevronDown
+                      className={cn(
+                        "h-5 w-5 transition-transform duration-200",
+                        openPaymentDetail === "bank" && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </div>
+                {openPaymentDetail === "bank" ? (
+                  <div className="space-y-3 border-t border-white/10 px-4 pb-4 pt-3 sm:px-5">
+                    <p className="font-gotham text-sm font-normal leading-relaxed text-white/80">
+                      <span className="font-medium text-white/95">Coming soon.</span>{" "}
+                      For teams that prefer invoices or manual transfers, we&apos;ll
+                      provide bank details and activate your membership after
+                      payment confirmation.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled
+                      className="w-full rounded-[0.83331rem] border-white/30 bg-black/30 font-gotham text-white/65 sm:w-auto sm:min-w-[14rem]"
+                    >
+                      Request bank details — coming soon
+                    </Button>
+                    <p className="font-gotham text-[13px] leading-snug text-white/65">
+                      Placeholder: email{" "}
+                      <a
+                        href={`mailto:${MANUAL_TRANSFER_EMAIL}`}
                         className="font-medium text-escobets-yellow underline hover:text-[#f5f877]"
                       >
-                        Open bot in Telegram
+                        {MANUAL_TRANSFER_EMAIL}
                       </a>{" "}
-                      <span className="text-white/60">
-                        (deep link only - does not start payment yet).
-                      </span>
+                      with your name + plan (monthly/annual). We&apos;ll reply
+                      with payment instructions and activation timing.
                     </p>
-                  ) : (
-                    <p className="mt-3 font-gotham text-[13px] leading-snug text-white/72">
-                      Optional: set{" "}
-                      <code className="rounded border border-white/15 bg-black/50 px-1.5 py-0.5 font-mono text-[11px] text-white/90 sm:text-xs">
-                        NEXT_PUBLIC_SUBSCRIPTION_TELEGRAM_PAY_BOT_USERNAME
-                      </code>{" "}
-                      for an “open bot” test link.
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={cn(
-                readPanel,
-                "border-dashed border-emerald-400/25 bg-[#07100b]/95 p-5 sm:p-6",
-              )}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-500/20 bg-emerald-950/60">
-                  <Landmark className="h-5 w-5 text-emerald-200" aria-hidden />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-gotham text-lg font-semibold tracking-tight text-white">
-                    Manual bank transfer
-                  </h2>
-                  <p className="mt-2 font-gotham text-sm font-normal leading-relaxed text-white/82">
-                    <span className="font-medium text-white">Coming soon.</span>{" "}
-                    For teams that prefer invoices or manual transfers, we&apos;ll
-                    provide bank details and activate your membership after
-                    payment confirmation.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled
-                    className="mt-4 w-full rounded-[0.83331rem] border-white/30 bg-black/30 font-gotham text-white/65 sm:w-auto sm:min-w-[14rem]"
-                  >
-                    Request bank details — coming soon
-                  </Button>
-                  <p className="mt-3 font-gotham text-[13px] leading-snug text-white/72">
-                    Placeholder: email{" "}
-                    <a
-                      href={`mailto:${MANUAL_TRANSFER_EMAIL}`}
-                      className="font-medium text-escobets-yellow underline hover:text-[#f5f877]"
-                    >
-                      {MANUAL_TRANSFER_EMAIL}
-                    </a>{" "}
-                    with your name + plan (monthly/annual). We&apos;ll reply with
-                    payment instructions and activation timing.
-                  </p>
-                </div>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -485,17 +646,21 @@ export function SubscriptionForm({ className }: { className?: string }) {
               <Button
                 type="button"
                 onClick={goToHostedCheckout}
-                disabled={!termsAccepted || !checkoutUrl}
+                disabled={!canUseHostedCheckout}
                 title={
                   !termsAccepted
                     ? "Accept the Terms and Conditions to continue"
                     : !checkoutUrl
-                    ? "Configure Stripe Payment Link URLs in the environment"
+                    ? "Configure hosted checkout URLs in the environment"
+                    : paymentMethod !== "secure-checkout"
+                    ? "Select card checkout to pay with this form"
                     : undefined
                 }
                 className="flex-1 rounded-[0.83331rem] bg-escobets-yellow text-black hover:bg-escobets-yellow/90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Continue to Stripe checkout
+                {paymentMethod === "secure-checkout"
+                  ? "Continue to secure checkout"
+                  : "Select card checkout to continue"}
               </Button>
             </div>
 

@@ -64,14 +64,14 @@ export function EntriesCsvToolbar({ entries, storageScope }: Props) {
           "Cancel = No, keep existing data and merge with the import (same id updates a row)",
       );
       if (deletePrevious) {
-        saveProfitTrackerEntries(imported, storageScope);
+        void saveProfitTrackerEntries(imported, storageScope);
       } else {
         const existing = loadProfitTrackerEntries(storageScope);
         const byId = new Map(existing.map((e) => [e.id, e]));
         for (const row of imported) {
           byId.set(row.id, row);
         }
-        saveProfitTrackerEntries(Array.from(byId.values()), storageScope);
+        void saveProfitTrackerEntries(Array.from(byId.values()), storageScope);
       }
     },
     [storageScope],
@@ -111,7 +111,7 @@ export function EntriesCsvToolbar({ entries, storageScope }: Props) {
           if (!first) return;
           const second = window.confirm("Are you sure? This cannot be undone.");
           if (!second) return;
-          clearProfitTrackerEntries(storageScope);
+          void clearProfitTrackerEntries(storageScope);
         }}
       >
         <Trash2 className="h-4 w-4" />

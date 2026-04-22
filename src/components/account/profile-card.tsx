@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { Pencil, Share2, Copy, Plus, Send } from "lucide-react";
+import { Copy, Plus, Send } from "lucide-react";
 import type { Profile } from "@/types/account";
 import { telegramAccountDisplayLines } from "@/lib/account/telegram-profile-email";
 import { Button } from "@/components/ui/button";
@@ -65,16 +65,12 @@ const SOCIAL_ICONS: Record<string, { label: string; icon: React.ReactNode }> = {
 
 interface ProfileCardProps {
   profile: Profile;
-  onEdit?: () => void;
-  onShare?: () => void;
   onAddSocial?: () => void;
   className?: string;
 }
 
 export function ProfileCard({
   profile,
-  onEdit,
-  onShare,
   onAddSocial,
   className,
 }: ProfileCardProps) {
@@ -98,27 +94,7 @@ export function ProfileCard({
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        <h2 className="font-gotham text-lg font-semibold text-white">Profile</h2>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"
-            aria-label="Edit profile"
-          >
-            <Pencil className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={onShare}
-            className="rounded-lg p-2 text-white/70 hover:bg-white/10 hover:text-white"
-            aria-label="Share"
-          >
-            <Share2 className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+      <h2 className="font-gotham text-lg font-semibold text-white">Profile</h2>
 
       <div className="mt-6 flex flex-col items-center">
         <div className="relative h-24 w-24 overflow-hidden rounded-full bg-white/10">

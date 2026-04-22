@@ -1,6 +1,6 @@
-import { NewsPostEditor } from "@/components/admin/news-post-editor";
+import { redirect } from "next/navigation";
 
-/** New news post – backend: add create logic */
+/** @deprecated — use /admin/news/new */
 export default function NewNewsPostPage() {
-  return <NewsPostEditor />;
+  redirect("/admin/news/new");
 }

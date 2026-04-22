@@ -2,7 +2,14 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const authRoutes = ["/login", "/signup", "/forgot-password"];
-const protectedRoutes = ["/account", "/profit-tracker", "/subscription", "/updates", "/users"];
+const protectedRoutes = [
+  "/account",
+  "/admin",
+  "/profit-tracker",
+  "/subscription",
+  "/updates",
+  "/users",
+];
 
 function matchesPrefix(pathname: string, prefixes: string[]) {
   return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

@@ -34,12 +34,7 @@ export function AccountView({
       <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-2 lg:items-stretch">
         {/* Left column */}
         <div className="flex min-h-0 h-full flex-col gap-6">
-          <ProfileCard
-            profile={profile}
-            onEdit={() => {}}
-            onShare={() => {}}
-            onAddSocial={() => {}}
-          />
+          <ProfileCard profile={profile} onAddSocial={() => {}} />
           <Link
             href="/account/subscription"
             className="flex items-center gap-4 rounded-lg border border-white/10 bg-black/30 p-4 text-left transition-colors hover:border-white/25"

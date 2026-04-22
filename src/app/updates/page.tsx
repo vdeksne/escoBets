@@ -2,54 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { UpdatesView } from "@/components/admin/updates-view";
-import type { NewsPostAdmin } from "@/types/news-post";
+import { mapNewsArticleToPostAdmin, computeAdminNewsStats } from "@/lib/news/admin-list-mapper";
+import type { NewsArticle } from "@/types/news";
 import type { ApiResponse } from "@/types/api";
 
-interface UpdatesData {
-  posts: NewsPostAdmin[];
-  stats: {
-    totalPosts: number;
-    newPosts: number;
-    livePosts: number;
-    totalViews: string;
-  };
-}
+type NewsListPayload = { items: NewsArticle[] };
 
-/** Admin updates (News and Predictions) – backend: replace mock data with API/CMS */
+/** Admin news & predictions: single list UI backed by the `news` CMS. */
 export default function UpdatesPage() {
-  const [data, setData] = useState<UpdatesData | null>(null);
+  const [items, setItems] = useState<NewsArticle[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    async function loadUpdates() {
+    async function load() {
       setIsLoading(true);
       setError(null);
-
       try {
-        const response = await fetch("/api/updates?page=1&pageSize=200", {
+        const res = await fetch("/api/admin/news", {
           signal: controller.signal,
+          credentials: "include",
         });
-        const payload = (await response.json()) as ApiResponse<UpdatesData>;
-
-        if (!response.ok || !payload.success) {
+        const json = (await res.json()) as ApiResponse<NewsListPayload>;
+        if (!res.ok || !json.success) {
           const message =
-            payload.success === false
-              ? payload.error.message
-              : "Failed to load updates.";
+            json.success === false ? json.error.message : "Failed to load news.";
           throw new Error(message);
         }
-
-        setData(payload.data);
-      } catch (fetchError) {
+        setItems(json.data.items);
+      } catch (e) {
         if (controller.signal.aborted) return;
-        setError(
-          fetchError instanceof Error
-            ? fetchError.message
-            : "Failed to load updates."
-        );
+        setError(e instanceof Error ? e.message : "Failed to load news.");
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false);
@@ -57,11 +42,8 @@ export default function UpdatesPage() {
       }
     }
 
-    void loadUpdates();
-
-    return () => {
-      controller.abort();
-    };
+    void load();
+    return () => controller.abort();
   }, []);
 
   if (error) {
@@ -72,13 +54,15 @@ export default function UpdatesPage() {
     );
   }
 
-  if (isLoading || !data) {
+  if (isLoading || items === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black px-4">
-        <p className="font-gotham text-sm text-white/70">Loading updates...</p>
+        <p className="font-gotham text-sm text-white/70">Loading…</p>
       </div>
     );
   }
 
-  return <UpdatesView posts={data.posts} stats={data.stats} />;
+  const posts = items.map(mapNewsArticleToPostAdmin);
+  const stats = computeAdminNewsStats(items);
+  return <UpdatesView posts={posts} stats={stats} />;
 }

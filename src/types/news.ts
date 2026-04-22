@@ -28,4 +28,16 @@ export interface NewsArticle {
   likes?: number;
   views?: number;
   comments?: number;
+  /** Admin API only — hidden from public /api/news */
+  isDraft?: boolean;
+}
+
+/** Public comment row from /api/news/[slug]/engagement or comments */
+export interface NewsCommentPublic {
+  id: string;
+  body: string;
+  author: string | null;
+  createdAt: string;
+  /** Server: current viewer may remove this (admin or own comment with visitor cookie) */
+  canDelete?: boolean;
 }

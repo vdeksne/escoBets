@@ -20,7 +20,13 @@ const config: StorybookConfig = {
       base: "/",
       define: {
         ...config.define,
-        "process.env": "{}",
+        // Placeholders so @supabase/ssr and any NEXT_PUBLIC_ reads do not throw in Storybook
+        "process.env.NEXT_PUBLIC_SUPABASE_URL": JSON.stringify(
+          "https://storybook-placeholder.supabase.co"
+        ),
+        "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY": JSON.stringify(
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.sb-storybook"
+        ),
       },
       esbuild: {
         ...config.esbuild,

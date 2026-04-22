@@ -2,7 +2,14 @@
 
 import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import type { AdminUser, UserStatus } from "@/types/user";
@@ -81,7 +88,7 @@ function SortableTh({
   const active = activeKey === columnKey;
   return (
     <th
-      className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70"
+      className="px-2.5 py-2 text-left text-xs font-medium uppercase tracking-wider text-white/70"
       scope="col"
       aria-sort={
         active ? (dir === "asc" ? "ascending" : "descending") : "none"
@@ -95,13 +102,13 @@ function SortableTh({
         <span>{label}</span>
         {active ? (
           dir === "asc" ? (
-            <ArrowUp className="h-3.5 w-3.5 shrink-0 text-escobets-yellow" aria-hidden />
+            <ArrowUp className="h-3 w-3 shrink-0 text-escobets-yellow" aria-hidden />
           ) : (
-            <ArrowDown className="h-3.5 w-3.5 shrink-0 text-escobets-yellow" aria-hidden />
+            <ArrowDown className="h-3 w-3 shrink-0 text-escobets-yellow" aria-hidden />
           )
         ) : (
           <ArrowUpDown
-            className="h-3.5 w-3.5 shrink-0 text-white/40"
+            className="h-3 w-3 shrink-0 text-white/40"
             aria-hidden
           />
         )}
@@ -259,10 +266,16 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" showAdminLinks />
-      <main className="flex-1 px-4 py-8 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          {/* Title */}
+      <Header />
+      <main className="flex-1 px-3 py-8 sm:px-4 md:px-5 lg:px-6 xl:px-8">
+        <div className="mx-auto w-full max-w-[min(100%,1800px)]">
+          <nav className="mb-2 font-gotham text-xs text-white/45" aria-label="Breadcrumb">
+            <Link href="/admin" className="text-white/60 transition hover:text-escobets-yellow">
+              Control centre
+            </Link>
+            <span className="mx-1.5">/</span>
+            <span className="text-white/80">Users</span>
+          </nav>
           <h1 className="font-gotham text-2xl font-bold text-white md:text-3xl">
             Users <span className="font-light text-white/70">{users.length}</span>
           </h1>
@@ -359,11 +372,11 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
           </div>
 
           {/* Table */}
-          <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
-            <table className="w-full min-w-[900px] border-collapse font-gotham text-sm">
+          <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 [scrollbar-gutter:stable]">
+            <table className="w-full min-w-[1024px] border-collapse font-gotham text-xs sm:min-w-[1120px]">
               <thead>
                 <tr className="border-b border-white/10 bg-escobets-gray-card/50">
-                  <th className="px-4 py-3 text-left font-medium uppercase tracking-wider text-white/70">
+                  <th className="px-2.5 py-2 text-left text-xs font-medium uppercase tracking-wider text-white/70">
                     <div className="flex items-center gap-2">
                       <input
                         ref={selectAllOnPageRef}
@@ -371,7 +384,7 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
                         checked={allOnPageSelected}
                         onChange={toggleSelectAllOnPage}
                         disabled={paginatedUsers.length === 0}
-                        className="h-4 w-4 shrink-0 border-white/30 accent-escobets-yellow disabled:opacity-40"
+                        className="h-3.5 w-3.5 shrink-0 border-white/30 accent-escobets-yellow disabled:opacity-40"
                         aria-label="Select all rows on this page"
                       />
                       <span>#</span>
@@ -441,31 +454,37 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
                     key={user.id}
                     className="border-b border-white/5 transition hover:bg-white/5"
                   >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2.5 py-2 align-top">
+                      <div className="flex items-center gap-1.5">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(user.id)}
                           onChange={() => toggleRow(user.id)}
-                          className="h-4 w-4 shrink-0 border-white/30 accent-escobets-yellow"
+                          className="h-3.5 w-3.5 shrink-0 border-white/30 accent-escobets-yellow"
                           aria-label={`Select ${user.userName}`}
                         />
                         <span className="text-white/80">{(page - 1) * rowsPerPage + idx + 1}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="max-w-[14rem] px-2.5 py-2 align-top sm:max-w-xs md:max-w-sm lg:max-w-md">
                       <Link
                         href={`/users/${encodeURIComponent(user.id)}/profit-tracker?name=${encodeURIComponent(user.userName)}`}
-                        className="text-escobets-yellow transition hover:underline"
+                        className="line-clamp-2 break-words text-escobets-yellow transition hover:underline"
                       >
                         {user.userName}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-white/90">{user.telegram}</td>
-                    <td className="px-4 py-3 text-white/90">{user.phone}</td>
-                    <td className="px-4 py-3 text-white/90">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-black px-3 py-1 font-medium text-white">
+                    <td className="max-w-[9rem] px-2.5 py-2 align-top sm:max-w-[10rem]">
+                      <span className="line-clamp-2 break-all text-white/90">{user.telegram}</span>
+                    </td>
+                    <td className="max-w-[8rem] px-2.5 py-2 align-top">
+                      <span className="line-clamp-2 break-words text-white/90">{user.phone}</span>
+                    </td>
+                    <td className="min-w-[12rem] max-w-[18rem] px-2.5 py-2 align-top sm:min-w-[14rem] sm:max-w-md lg:min-w-[16rem] lg:max-w-lg">
+                      <span className="line-clamp-2 break-all text-white/90">{user.email}</span>
+                    </td>
+                    <td className="px-2.5 py-2 align-top">
+                      <span className="inline-flex max-w-full items-center gap-1 rounded-md border border-white/20 bg-black px-2 py-0.5 text-[0.7rem] font-medium leading-tight text-white sm:text-xs">
                         <span
                           className={cn("h-1.5 w-1.5 shrink-0 rounded-full", STATUS_DOT_COLORS[user.status])}
                           aria-hidden
@@ -473,9 +492,15 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
                         {user.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-white/80">{user.lastUpdate}</td>
-                    <td className="px-4 py-3 text-escobets-yellow">{formatCurrency(user.profits)}</td>
-                    <td className="px-4 py-3 text-white/80">{formatCurrency(user.losses)}</td>
+                    <td className="px-2.5 py-2 align-top text-white/80">
+                      <span className="line-clamp-2 break-words">{user.lastUpdate}</span>
+                    </td>
+                    <td className="px-2.5 py-2 align-top tabular-nums text-escobets-yellow">
+                      {formatCurrency(user.profits)}
+                    </td>
+                    <td className="px-2.5 py-2 align-top tabular-nums text-white/80">
+                      {formatCurrency(user.losses)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -483,50 +508,89 @@ export function UsersView({ users, onRefresh }: UsersViewProps) {
           </div>
 
           {/* Pagination */}
-          <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="font-gotham text-sm text-white/70">
-              {(page - 1) * rowsPerPage + 1}-
-              {Math.min(page * rowsPerPage, filteredCount)} of {filteredCount}
+          <div
+            className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            role="navigation"
+            aria-label="Table pagination"
+          >
+            <p className="font-gotham text-xs text-white/50 sm:text-sm">
+              <span className="text-white/40">Showing </span>
+              <span className="tabular-nums text-white/90">
+                {(page - 1) * rowsPerPage + 1}–{Math.min(page * rowsPerPage, filteredCount)}
+              </span>
+              <span className="text-white/40"> of </span>
+              <span className="tabular-nums text-white/80">{filteredCount}</span>
             </p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <label htmlFor="rows-per-page" className="font-gotham text-sm text-white/70">
-                  Rows per page:
-                </label>
-                <select
-                  id="rows-per-page"
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="rounded border border-white/20 bg-escobets-gray-card px-2 py-1 font-gotham text-sm text-white focus:border-escobets-yellow/50 focus:outline-none"
+            <div className="flex flex-wrap items-stretch gap-2 sm:items-center sm:gap-3">
+              <div className="inline-flex min-h-[2.5rem] items-center gap-2 rounded-xl border border-white/10 bg-escobets-gray-card/80 px-3 py-1.5 pl-3.5 shadow-sm shadow-black/20 backdrop-blur-sm">
+                <label
+                  htmlFor="rows-per-page"
+                  className="shrink-0 font-gotham text-xs text-white/50 sm:text-sm"
                 >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
+                  Rows per page
+                </label>
+                <div className="relative min-w-[4.5rem]">
+                  <select
+                    id="rows-per-page"
+                    value={rowsPerPage}
+                    onChange={(e) => {
+                      setRowsPerPage(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="h-8 w-full cursor-pointer appearance-none rounded-lg border border-white/15 bg-black/40 py-1 pl-2.5 pr-7 font-gotham text-xs text-white/95 transition hover:border-white/25 focus:border-escobets-yellow/50 focus:outline-none focus:ring-2 focus:ring-escobets-yellow/20 sm:text-sm"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-1.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/40"
+                    aria-hidden
+                    strokeWidth={2.5}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-1">
+
+              <div className="inline-flex min-h-[2.5rem] items-center overflow-hidden rounded-xl border border-white/10 bg-escobets-gray-card/80 p-0.5 font-gotham shadow-sm shadow-black/20 backdrop-blur-sm">
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="rounded px-3 py-1 font-gotham text-sm text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-transparent"
+                  aria-label="Previous page"
+                  className={cn(
+                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/90 transition",
+                    "hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-escobets-yellow/50",
+                    "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                  )}
                 >
-                  &lt;
+                  <ChevronLeft className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 </button>
-                <span className="px-2 font-gotham text-sm text-white">
-                  {page}/{totalPages || 1}
-                </span>
+                <div
+                  className="flex min-w-[5.5rem] flex-col items-center justify-center px-2 py-0.5 sm:min-w-[6rem] sm:px-3"
+                  aria-live="polite"
+                >
+                  <span className="text-[0.65rem] font-medium uppercase tracking-widest text-white/40">
+                    Page
+                  </span>
+                  <span className="text-sm font-semibold tabular-nums tracking-tight text-white sm:text-base">
+                    {page}
+                    <span className="font-normal text-white/35"> / </span>
+                    {totalPages || 1}
+                  </span>
+                </div>
                 <button
                   type="button"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="rounded px-3 py-1 font-gotham text-sm text-white/80 hover:bg-white/10 disabled:opacity-50 disabled:hover:bg-transparent"
+                  aria-label="Next page"
+                  className={cn(
+                    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/90 transition",
+                    "hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-escobets-yellow/50",
+                    "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                  )}
                 >
-                  &gt;
+                  <ChevronRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
                 </button>
               </div>
             </div>

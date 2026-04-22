@@ -1,25 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings/defaults";
+import type { SiteDeal } from "@/types/site-settings";
 
-const deals = [
-  {
-    title: "Giveaway & Gifts",
-    date: "10/10/2026",
-    image: "/images/newDeals/Image.png",
-  },
-  {
-    title: "Buy One, Get One",
-    date: "10/11/2026",
-    image: "/images/newDeals/Image-1.png",
-  },
-  {
-    title: "Referral Program",
-    date: "20/9/2026",
-    image: "/images/newDeals/Image-2.png",
-  },
-];
+type NewDealsProps = {
+  deals?: SiteDeal[];
+};
 
-export function NewDeals() {
+export function NewDeals({ deals = DEFAULT_SITE_SETTINGS.deals }: NewDealsProps) {
   return (
     <section className="px-4 py-16 md:py-24">
       <div className="container mx-auto">
@@ -36,8 +24,8 @@ export function NewDeals() {
           {deals.map((deal, i) => (
             <Link
               prefetch={false}
-              key={i}
-              href="/deals"
+              key={`${deal.title}-${i}`}
+              href={deal.href || "/deals"}
               className="group overflow-hidden rounded-xl border border-white/10 bg-escobets-gray-card transition hover:border-escobets-yellow/50"
             >
               <div className="relative aspect-[16/9] w-full overflow-hidden">

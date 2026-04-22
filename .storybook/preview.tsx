@@ -3,9 +3,14 @@ import type { Preview } from "@storybook/react-vite";
 import "../src/app/globals.css";
 
 // Shim for Next.js / other code that expects process.env (avoids "process is not defined" in Storybook)
+const storybookPublicEnv: Record<string, string | undefined> = {
+  NODE_ENV: "development",
+  NEXT_PUBLIC_SUPABASE_URL: "https://storybook-placeholder.supabase.co",
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.sb-storybook",
+};
 if (typeof globalThis.process === "undefined") {
   (globalThis as typeof globalThis & { process: NodeJS.Process }).process = {
-    env: {},
+    env: storybookPublicEnv,
   } as NodeJS.Process;
 }
 

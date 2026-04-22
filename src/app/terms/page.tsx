@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black">
-      <Header variant="withLogo" />
+      <Header />
       <main className="flex-1 px-4 py-10 md:py-14">
         <article className="mx-auto max-w-3xl">
           <p className="font-gotham text-xs font-medium uppercase tracking-[0.2em] text-escobets-yellow/90">

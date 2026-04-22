@@ -3,7 +3,6 @@ export { Hero } from "./hero";
 export { PromoBanner } from "./promo-banner";
 export { TweetCarousel } from "./tweet-carousel";
 export { Pricing } from "./pricing";
-export { BookDemo } from "./book-demo";
 export { NewDeals } from "./new-deals";
 export { FAQ } from "./faq";
 export { Footer } from "./footer";
