@@ -38,6 +38,29 @@ export default function AccountPage() {
     };
   }, []);
 
+  /** After `/auth/telegram-link`, JWT `user_metadata` needs a refresh to show Telegram on the profile. */
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const tg = sp.get("telegram");
+    if (tg === "linked" || tg === "already") {
+      const supabase = createClient();
+      void (async () => {
+        await supabase.auth.refreshSession();
+        const res = await fetch("/api/account/profile", { cache: "no-store" });
+        const json = (await res.json()) as ApiResponse<Profile>;
+        if (res.ok && json.success) {
+          setProfile(json.data);
+        }
+        sp.delete("telegram");
+        sp.delete("reason");
+        const u = new URL(window.location.href);
+        u.search = sp.toString() ? `?${sp.toString()}` : "";
+        window.history.replaceState({}, "", u.pathname + u.search);
+      })();
+    }
+  }, []);
+
   const handleSaveProfile = async (data: Partial<Profile>) => {
     const res = await fetch("/api/account/profile", {
       method: "PUT",

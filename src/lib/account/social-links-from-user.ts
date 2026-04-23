@@ -1,18 +1,20 @@
 import type { User, UserIdentity } from "@supabase/supabase-js";
 import type { SocialLink } from "@/types/account";
-import { isTelegramPlaceholderEmail } from "@/lib/account/telegram-profile-email";
+import {
+  isTelegramPlaceholderEmail,
+  readTelegramIdFromUserMetadata,
+} from "@/lib/account/telegram-profile-email";
 
 function defaultRow(provider: SocialLink["provider"]): SocialLink {
   return { id: provider, provider, linked: false };
 }
 
-const ORDER: SocialLink["provider"][] = ["google", "x", "telegram", "linkedin"];
+const ORDER: SocialLink["provider"][] = ["google", "x", "telegram"];
 
 /** Map Supabase auth identity `provider` to our UI provider key. */
 function authProviderToSocial(provider: string): SocialLink["provider"] | null {
   if (provider === "google") return "google";
   if (provider === "twitter" || provider === "x") return "x";
-  if (provider === "linkedin" || provider === "linkedin_oidc") return "linkedin";
   if (provider === "telegram") return "telegram";
   return null;
 }
@@ -27,7 +29,10 @@ export function buildSocialLinksFromUser(user: User | null, resolvedEmail: strin
     const p = authProviderToSocial(ident.provider);
     if (p) byProvider.set(p, true);
   }
-  if (isTelegramPlaceholderEmail(resolvedEmail)) {
+  if (
+    isTelegramPlaceholderEmail(resolvedEmail) ||
+    (user ? Boolean(readTelegramIdFromUserMetadata(user)) : false)
+  ) {
     byProvider.set("telegram", true);
   }
   return ORDER.map((p) => ({
@@ -52,13 +57,12 @@ export function findUserIdentity(
  */
 export function supabaseLinkProvider(
   p: SocialLink["provider"]
-): "google" | "x" | "linkedin" | null {
+): "google" | "x" | null {
   if (p === "google") return "google";
   if (p === "x") return "x";
-  if (p === "linkedin") return "linkedin";
   return null;
 }
 
 export function isLinkIdentitySupported(p: SocialLink["provider"]): boolean {
-  return p === "google" || p === "x" || p === "linkedin";
+  return p === "google" || p === "x";
 }

@@ -5,7 +5,7 @@
 
 export interface SocialLink {
   id: string;
-  provider: "google" | "x" | "telegram" | "linkedin";
+  provider: "google" | "x" | "telegram";
   linked: boolean;
 }
 

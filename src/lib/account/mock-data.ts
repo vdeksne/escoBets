@@ -24,6 +24,5 @@ export const MOCK_PROFILE: Profile = {
     { id: "1", provider: "google", linked: true },
     { id: "2", provider: "x", linked: true },
     { id: "3", provider: "telegram", linked: false },
-    { id: "4", provider: "linkedin", linked: true },
   ],
 };

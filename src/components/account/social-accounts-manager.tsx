@@ -3,7 +3,11 @@
 import * as React from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { isTelegramPlaceholderEmail } from "@/lib/account/telegram-profile-email";
+import {
+  isTelegramPlaceholderEmail,
+  readTelegramIdFromUserMetadata,
+} from "@/lib/account/telegram-profile-email";
+import { TelegramLoginWidget } from "@/components/landing/telegram-login-widget";
 import {
   findUserIdentity,
   isLinkIdentitySupported,
@@ -30,7 +34,10 @@ function providerLinked(
   accountEmail: string
 ): boolean {
   if (findUserIdentity(user, p)) return true;
-  if (p === "telegram" && isTelegramPlaceholderEmail(accountEmail)) return true;
+  if (p === "telegram") {
+    if (isTelegramPlaceholderEmail(accountEmail)) return true;
+    if (readTelegramIdFromUserMetadata(user)) return true;
+  }
   return false;
 }
 
@@ -109,7 +116,27 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
         setMessage({ type: "err", text: guErr?.message ?? "Not signed in." });
         return;
       }
-      const ident = findUserIdentity(data.user, p);
+      const u = data.user;
+      const ident = findUserIdentity(u, p);
+
+      if (p === "telegram" && !ident && readTelegramIdFromUserMetadata(u)) {
+        const res = await fetch("/api/account/telegram/unlink", { method: "POST", credentials: "include" });
+        const json = (await res.json()) as
+          | { success: true }
+          | { success: false; error: { message: string } };
+        if (!res.ok || !("success" in json) || !json.success) {
+          setMessage({
+            type: "err",
+            text: (json as { error?: { message: string } }).error?.message ?? "Unlink failed.",
+          });
+          return;
+        }
+        setMessage({ type: "ok", text: "Telegram removed from this account." });
+        await refreshUser();
+        onUpdated();
+        return;
+      }
+
       if (!ident) {
         setMessage({ type: "err", text: "Could not find that login method on your account." });
         return;
@@ -160,8 +187,9 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
           </button>
         </div>
         <p className="mb-4 font-gotham text-sm font-light text-white/60">
-          Connect Google, X, or LinkedIn to sign in faster. You can disconnect anytime if you still
-          have another way to sign in (e.g. password or email).
+          Connect Google, X, or Telegram to this account. For OAuth (Google, X) you need{" "}
+          <span className="text-white/75">Allow manual linking</span> in Supabase. Telegram uses the
+          widget and saves your handle to this profile.
         </p>
         {message?.type === "err" && isManualLinkingDisabledError(message.text) ? (
           <div
@@ -205,7 +233,7 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
         ) : null}
         <ul className="flex flex-col gap-2">
           {user &&
-            (["google", "x", "linkedin", "telegram"] as const).map((p) => {
+            (["google", "x", "telegram"] as const).map((p) => {
               const linked = providerLinked(p, user, accountEmail);
               const canLink = isLinkIdentitySupported(p);
               const label = socialProviderLabel(p);
@@ -229,25 +257,34 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
                   </div>
                   <div className="shrink-0 text-right">
                     {p === "telegram" ? (
-                      <span className="font-gotham text-xs text-white/45">
-                        {linked && !findUserIdentity(user, "telegram")
-                          ? "Primary Telegram sign-in"
-                          : !linked
-                            ? "Use Telegram on the login page"
-                            : null}
-                        {linked && findUserIdentity(user, "telegram") ? (
+                      <div className="flex flex-wrap items-center justify-end gap-2">
+                        {!linked ? (
+                          <div className="flex items-center gap-2 [&>div]:max-w-none">
+                            <span className="font-gotham text-xs text-white/50">Connect</span>
+                            <TelegramLoginWidget
+                              variant="link"
+                              className="h-9 w-9 rounded-full border border-white/20 bg-black hover:border-escobets-yellow/50"
+                            />
+                          </div>
+                        ) : isTelegramPlaceholderEmail(accountEmail) &&
+                          !readTelegramIdFromUserMetadata(user) &&
+                          !findUserIdentity(user, "telegram") ? (
+                          <span className="font-gotham text-xs text-white/45">Primary Telegram sign-in</span>
+                        ) : null}
+                        {linked &&
+                        (findUserIdentity(user, "telegram") || readTelegramIdFromUserMetadata(user)) ? (
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             disabled={loading}
                             onClick={() => void unlinkOne(p)}
-                            className="ml-1 font-gotham text-xs text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                            className="font-gotham text-xs text-red-300 hover:bg-red-500/10 hover:text-red-200"
                           >
                             {busyUn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Disconnect"}
                           </Button>
                         ) : null}
-                      </span>
+                      </div>
                     ) : linked ? (
                       <Button
                         type="button"

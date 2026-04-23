@@ -22,6 +22,11 @@ declare global {
 interface TelegramLoginWidgetProps {
   /** Same-site path after login (e.g. `/account`). */
   nextPath?: string;
+  /**
+   * `signin` — full Telegram account (magic link to `tg_*@` user).  
+   * `link` — attach Telegram to the **current** session (`/auth/telegram-link`).
+   */
+  variant?: "signin" | "link";
   /** Outer layout (e.g. match Google/X circular buttons). */
   className?: string;
 }
@@ -80,7 +85,11 @@ function authDataToSearchParams(data: Record<string, unknown>): string {
  * Telegram Login via `Telegram.Login.auth` (popup). Custom icon from `/icons/telegram.png`.
  * Requires `TELEGRAM_BOT_TOKEN` on the server (`/api/auth/telegram/bot-id` exposes numeric bot id only).
  */
-export function TelegramLoginWidget({ nextPath = "/account", className }: TelegramLoginWidgetProps) {
+export function TelegramLoginWidget({
+  nextPath = "/account",
+  variant = "signin",
+  className,
+}: TelegramLoginWidgetProps) {
   const [botId, setBotId] = React.useState<string | null>(null);
   const [botIdLoaded, setBotIdLoaded] = React.useState(false);
   const [tokenMissingOnServer, setTokenMissingOnServer] = React.useState(false);
@@ -162,16 +171,19 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
     const login = window.Telegram?.Login?.auth;
     if (!login) return;
 
-    const next = nextPath.startsWith("/") ? nextPath : "/account";
-    const secure = window.location.protocol === "https:";
-    document.cookie = `${TG_NEXT_COOKIE}=${encodeURIComponent(next)};path=/;max-age=600;SameSite=Lax${secure ? ";Secure" : ""}`;
+    if (variant === "signin") {
+      const next = nextPath.startsWith("/") ? nextPath : "/account";
+      const secure = window.location.protocol === "https:";
+      document.cookie = `${TG_NEXT_COOKIE}=${encodeURIComponent(next)};path=/;max-age=600;SameSite=Lax${secure ? ";Secure" : ""}`;
+    }
 
+    const targetPath = variant === "link" ? "/auth/telegram-link" : "/auth/telegram";
     login({ bot_id: botId, request_access: "write" }, (data) => {
       if (data === false || typeof data !== "object" || data === null) return;
       const q = authDataToSearchParams(data as Record<string, unknown>);
-      window.location.assign(`${window.location.origin}/auth/telegram?${q}`);
+      window.location.assign(`${window.location.origin}${targetPath}?${q}`);
     });
-  }, [botId, nextPath]);
+  }, [botId, nextPath, variant]);
 
   const disabledHint = tokenMissingOnServer
     ? "Telegram sign-in: set TELEGRAM_BOT_TOKEN on the server (.env.local or hosting env), restart the app, and link the domain in @BotFather."
@@ -188,8 +200,14 @@ export function TelegramLoginWidget({ nextPath = "/account", className }: Telegr
         )}
         disabled={!canUseTelegram}
         onClick={startTelegram}
-        aria-label="Continue with Telegram"
-        title={canUseTelegram ? "Continue with Telegram" : disabledHint}
+        aria-label={variant === "link" ? "Link Telegram to this account" : "Continue with Telegram"}
+        title={
+          canUseTelegram
+            ? variant === "link"
+              ? "Link Telegram to this account"
+              : "Continue with Telegram"
+            : disabledHint
+        }
       >
         <Image
           src="/icons/telegram.png"
