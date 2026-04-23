@@ -47,19 +47,31 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsPayload = {
       title: "Giveaway & Gifts",
       date: "10/10/2026",
       image: "/images/newDeals/Image.png",
-      href: "/deals",
+      href: "/deals/giveaway",
+      slug: "giveaway",
+      body: `Seasonal prize draws for active subscribers. Eligible members are entered automatically when their subscription is in good standing during the promotional window.
+
+Prizes may include free months of access, merch, or partner perks — we announce the exact pool and draw dates in Telegram and on this page. Winners are chosen at random and contacted by email. No purchase beyond your normal plan is required to enter where local rules allow; see the official rules post for exclusions and KYC if applicable.`,
     },
     {
       title: "Buy One, Get One",
       date: "10/11/2026",
       image: "/images/newDeals/Image-1.png",
-      href: "/deals",
+      href: "/deals/bogo",
+      slug: "bogo",
+      body: `Bring a friend: when you purchase an eligible annual plan, you can unlock a credit or bonus period for a second account (or extend your own term — we specify the offer in the campaign copy).
+
+The “Get One” part applies only to qualifying plans and dates. Stacking with other promos is usually not allowed. Full mechanics, cap, and eligibility are posted in-channel when the campaign is live. Support can help if you subscribed during a BOGO window and don’t see the bonus applied within 48 hours.`,
     },
     {
       title: "Referral Program",
       date: "20/9/2026",
       image: "/images/newDeals/Image-2.png",
-      href: "/deals",
+      href: "/deals/referral",
+      slug: "referral",
+      body: `Share your referral link from the account area. When someone subscribes for the first time through your link, you earn rewards according to the current tier table (e.g. account credit or extended access).
+
+Referred users must be new customers who complete a paid subscription. Self-referrals, duplicate accounts, or chargebacks can void the reward. We may change tier amounts with notice; your dashboard always shows the active structure.`,
     },
   ],
   faq: {

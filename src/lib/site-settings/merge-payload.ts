@@ -74,14 +74,26 @@ export function mergeSiteSettings(raw: unknown): SiteSettingsPayload {
     },
     deals: (() => {
       if (!Array.isArray(raw.deals)) return DEFAULT_SITE_SETTINGS.deals;
+      const defs = DEFAULT_SITE_SETTINGS.deals;
       const m = raw.deals
         .filter(isRecord)
-        .map((d) => ({
-          title: typeof d.title === "string" ? d.title : "",
-          date: typeof d.date === "string" ? d.date : "",
-          image: typeof d.image === "string" ? d.image : "",
-          href: typeof d.href === "string" ? d.href : "/deals",
-        }))
+        .map((d, i) => {
+          const def = defs[i] ?? defs[defs.length - 1]!;
+          const title = typeof d.title === "string" && d.title.trim() ? d.title : def.title;
+          const date = typeof d.date === "string" ? d.date : def.date;
+          const image = typeof d.image === "string" ? d.image : def.image;
+          let href = typeof d.href === "string" ? d.href : def.href;
+          let slug = typeof d.slug === "string" ? d.slug.trim() : "";
+          if (!slug) {
+            const seg = /^\/deals\/([^/?#]+)\/?$/.exec(href);
+            slug = seg?.[1] ?? def.slug;
+          }
+          const body = typeof d.body === "string" ? d.body : def.body;
+          if (href === "/deals" && slug) {
+            href = `/deals/${slug}`;
+          }
+          return { title, date, image, href, slug, body };
+        })
         .filter((d) => d.title);
       return m.length > 0 ? m : DEFAULT_SITE_SETTINGS.deals;
     })(),

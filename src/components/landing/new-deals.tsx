@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { dealPageHref } from "@/lib/site-settings/deal-href";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/site-settings/defaults";
 import type { SiteDeal } from "@/types/site-settings";
 
@@ -25,7 +26,7 @@ export function NewDeals({ deals = DEFAULT_SITE_SETTINGS.deals }: NewDealsProps)
             <Link
               prefetch={false}
               key={`${deal.title}-${i}`}
-              href={deal.href || "/deals"}
+              href={dealPageHref(deal)}
               className="group overflow-hidden rounded-xl border border-white/10 bg-escobets-gray-card transition hover:border-escobets-yellow/50"
             >
               <div className="relative aspect-[16/9] w-full overflow-hidden">

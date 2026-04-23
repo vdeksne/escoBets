@@ -2,7 +2,12 @@ export type SiteDeal = {
   title: string;
   date: string;
   image: string;
+  /** Use `/deals/[slug]`, an external URL, or leave `/deals` to fall back to the slug. */
   href: string;
+  /** URL segment for the public detail page, e.g. `giveaway` → `/deals/giveaway`. */
+  slug: string;
+  /** Long-form copy for `/deals/[slug]` (line breaks are preserved). */
+  body: string;
 };
 
 export type SiteFaqItem = {

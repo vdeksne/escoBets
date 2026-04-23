@@ -38,13 +38,9 @@ export function FAQ({
             <AccordionItem
               key={i}
               value={`item-${i}`}
-              className="w-full max-w-[70rem] shrink-0 overflow-hidden rounded-[1.25rem] border border-b-0 border-white/[0.05] p-0 shadow-[50px_15px_80px_-20px_rgba(85,85,124,0.08)] backdrop-blur-[13px]"
-              style={{
-                background:
-                  "linear-gradient(265deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)",
-              }}
+              className="w-full max-w-[70rem] shrink-0 overflow-hidden rounded-[1.25rem] border border-b-0 border-white/15 p-0 shadow-none [background:linear-gradient(145deg,rgba(255,255,255,0.09),rgba(255,255,255,0.03))] [box-shadow:inset_0_1px_0_rgba(255,255,255,0.06)]"
             >
-              <AccordionTrigger className="min-h-[6.16669rem] px-11 py-[0.91669rem] text-left text-base font-bold text-white hover:no-underline hover:bg-transparent [&[data-state=open]]:bg-white/[0.02]">
+              <AccordionTrigger className="min-h-[6.16669rem] px-11 py-[0.91669rem] text-left text-base font-bold text-white hover:no-underline hover:bg-white/[0.06] [&[data-state=open]]:bg-white/[0.08]">
                 {item.q}
               </AccordionTrigger>
               <AccordionContent className="border-t border-white/[0.05] px-11 pb-6 pt-4 text-white/80">

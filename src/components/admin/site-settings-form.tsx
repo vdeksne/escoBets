@@ -94,18 +94,24 @@ export function SiteSettingsForm({ initial }: Props) {
   };
 
   const addDeal = () => {
-    setData((d) => ({
-      ...d,
-      deals: [
-        ...d.deals,
-        {
-          title: "New deal",
-          date: "",
-          image: "/images/newDeals/Image.png",
-          href: "/deals",
-        } satisfies SiteDeal,
-      ],
-    }));
+    setData((d) => {
+      const n = d.deals.length + 1;
+      const slug = `deal-${n}`;
+      return {
+        ...d,
+        deals: [
+          ...d.deals,
+          {
+            title: "New deal",
+            date: "",
+            image: "/images/newDeals/Image.png",
+            href: `/deals/${slug}`,
+            slug,
+            body: "Describe the offer here. Add terms, eligibility, and how members qualify. Line breaks are preserved on the public page.",
+          } satisfies SiteDeal,
+        ],
+      };
+    });
   };
 
   const updateDeal = (index: number, next: Partial<SiteDeal>) => {
@@ -712,11 +718,40 @@ export function SiteSettingsForm({ initial }: Props) {
                         />
                       </div>
                       <div>
-                        <label className={labelClass()}>Link</label>
+                        <label className={labelClass()}>URL path key</label>
+                        <Input
+                          className={inputOverride}
+                          value={deal.slug}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const forHref = raw.trim();
+                            updateDeal(index, {
+                              slug: raw,
+                              href: forHref ? `/deals/${forHref}` : deal.href,
+                            });
+                          }}
+                          placeholder="e.g. giveaway"
+                        />
+                        <p className="mt-1 font-gotham text-[11px] text-white/40">
+                          Public page: /deals/… — link below can override to an external URL.
+                        </p>
+                      </div>
+                      <div>
+                        <label className={labelClass()}>Link (optional override)</label>
                         <Input
                           className={inputOverride}
                           value={deal.href}
                           onChange={(e) => updateDeal(index, { href: e.target.value })}
+                          placeholder="/deals/giveaway or https://…"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className={labelClass()}>Full description (public page)</label>
+                        <textarea
+                          className={textareaClass}
+                          rows={8}
+                          value={deal.body}
+                          onChange={(e) => updateDeal(index, { body: e.target.value })}
                         />
                       </div>
                       <div className="sm:col-span-2">
