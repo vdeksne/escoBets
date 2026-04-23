@@ -114,13 +114,60 @@ export async function POST(request: Request): Promise<NextResponse<UploadRespons
     return errorResponse(500, "AVATAR_SAVE_FAILED", "Uploaded file but could not update profile.", dbError.message);
   }
 
-  if (!data?.length) {
+  if (data?.length) {
+    return successResponse({ avatarUrl: publicUrl });
+  }
+
+  const email = user.email?.trim() ?? "";
+  if (!email) {
     return errorResponse(
-      404,
-      "PROFILE_NOT_FOUND",
-      "No profile row found. Save your profile once, then try again."
+      400,
+      "NO_EMAIL",
+      "Add a verified email to your account before uploading a photo."
+    );
+  }
+  const local = email.split("@")[0] ?? "user";
+  const userName =
+    local
+      .replace(/[^a-zA-Z0-9_.-]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 255) || "user";
+
+  const { data: upData, error: upError } = await supabase
+    .from("profiles")
+    .upsert(
+      { id: user.id, user_name: userName, email, avatar_url: publicUrl },
+      { onConflict: "id" }
+    )
+    .select("id");
+
+  if (!upError && upData?.length) {
+    return successResponse({ avatarUrl: publicUrl });
+  }
+
+  if (admin) {
+    const { data: aData, error: aError } = await admin
+      .from("profiles")
+      .upsert(
+        { id: user.id, user_name: userName, email, avatar_url: publicUrl },
+        { onConflict: "id" }
+      )
+      .select("id");
+    if (!aError && aData?.length) {
+      return successResponse({ avatarUrl: publicUrl });
+    }
+    return errorResponse(
+      500,
+      "AVATAR_SAVE_FAILED",
+      "Could not create or update your profile row. Check Supabase RLS and profiles columns.",
+      aError?.message ?? upError?.message
     );
   }
 
-  return successResponse({ avatarUrl: publicUrl });
+  return errorResponse(
+    500,
+    "AVATAR_SAVE_FAILED",
+    upError?.message ?? "Could not create profile row. Save your profile in the form once, or set SUPABASE_SERVICE_ROLE_KEY on the server."
+  );
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import {
   isTelegramPlaceholderEmail,
   readAvatarUrlFromUserMetadata,
@@ -433,10 +434,39 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
         return successResponse(profileFromRow(rowMinimal));
       }
 
+      const service = createServiceRoleClient();
+      if (service) {
+        const { data: dataSvc, error: errorSvc } = await service
+          .from("profiles")
+          .upsert(updateSnakeBase, { onConflict: "id" })
+          .select("*");
+        const rowSvc = firstRow(dataSvc);
+        if (!errorSvc && rowSvc) {
+          return successResponse(profileFromRow(rowSvc));
+        }
+        const { data: dataSvcMin, error: errorSvcMin } = await service
+          .from("profiles")
+          .upsert(
+            { id: user.id, user_name, email: profileEmail },
+            { onConflict: "id" }
+          )
+          .select("*");
+        const rowSvcMin = firstRow(dataSvcMin);
+        if (!errorSvcMin && rowSvcMin) {
+          return successResponse(profileFromRow(rowSvcMin));
+        }
+        return errorResponse(
+          500,
+          "PROFILE_SAVE_FAILED",
+          "Failed to save profile. User session upserts failed; service role upsert also failed. Check SUPABASE_SERVICE_ROLE_KEY on the server, profiles RLS, and table columns.",
+          `${errorSnake.message}; user minimal: ${errorMinimal?.message ?? "n/a"}; svc: ${errorSvc?.message ?? "n/a"}; svc-min: ${errorSvcMin?.message ?? "n/a"}`
+        );
+      }
+
       return errorResponse(
         500,
         "PROFILE_SAVE_FAILED",
-        "Failed to save profile.",
+        "Failed to save profile. Set SUPABASE_SERVICE_ROLE_KEY on your host to allow a server-side save when row-level security blocks the browser session.",
         `${errorSnake.message}; retry: ${errorCamel.message}; fallback: ${errorSnakeNoDob?.message ?? "n/a"}; ${errorCamelNoDob?.message ?? "n/a"}; legacy: ${errorLegacy?.message ?? "n/a"}; minimal: ${errorMinimal?.message ?? "n/a"}`
       );
     }

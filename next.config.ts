@@ -46,11 +46,20 @@ const xImagePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
   { protocol: "https", hostname: "video.twimg.com", pathname: "/**" },
 ];
 
+/** Google OAuth / Sign-in with Google – profile photos (e.g. lh3.googleusercontent.com). */
+const googleUserContentPatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
+  { protocol: "https", hostname: "lh3.googleusercontent.com", pathname: "/**" },
+  { protocol: "https", hostname: "lh4.googleusercontent.com", pathname: "/**" },
+  { protocol: "https", hostname: "lh5.googleusercontent.com", pathname: "/**" },
+  { protocol: "https", hostname: "lh6.googleusercontent.com", pathname: "/**" },
+];
+
 const mergedImages: NextConfig["images"] = {
   remotePatterns: [
     ...(supabaseImageRemote?.remotePatterns ?? []),
     ...telegramAvatarRemotePatterns,
     ...xImagePatterns,
+    ...googleUserContentPatterns,
   ],
 };
 
