@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { fetchUserFromAuthServer } from "@/lib/auth/fetch-user-from-auth-server";
 import {
   readAvatarUrlFromUserMetadata,
   readTelegramIdFromUserMetadata,
@@ -250,7 +251,9 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
     return errorResponse(500, "PROFILE_FETCH_FAILED", "Failed to load profile.", error.message);
   }
 
-  const metaTg = readTelegramIdFromUserMetadata(user);
+  const userForFields = (await fetchUserFromAuthServer(user.id)) ?? user;
+
+  const metaTg = readTelegramIdFromUserMetadata(userForFields);
   const rowTg =
     row && typeof (row as { telegram_id?: unknown }).telegram_id === "string"
       ? (row as { telegram_id: string }).telegram_id
@@ -268,11 +271,11 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
   return successResponse(
     toProfile({
       userId: user.id,
-      email: user.email ?? "",
-      user,
+      email: userForFields.email ?? user.email ?? "",
+      user: userForFields,
       row,
-      telegramUsername: readTelegramUsernameFromUserMetadata(user),
-      authAvatarFallback: readAvatarUrlFromUserMetadata(user),
+      telegramUsername: readTelegramUsernameFromUserMetadata(userForFields),
+      authAvatarFallback: readAvatarUrlFromUserMetadata(userForFields),
     })
   );
 }
@@ -287,8 +290,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
   if (authError || !user) {
     return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
   }
-
-  const telegramUsername = readTelegramUsernameFromUserMetadata(user);
 
   let payload: ProfilePayload;
   try {
@@ -370,15 +371,17 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
     return null;
   };
 
-  const profileFromRow = (row: Record<string, unknown> | null) =>
-    toProfile({
+  const profileFromRow = async (row: Record<string, unknown> | null) => {
+    const u = (await fetchUserFromAuthServer(user.id)) ?? user;
+    return toProfile({
       userId: user.id,
       email: profileEmail,
-      user,
+      user: u,
       row,
-      telegramUsername,
-      authAvatarFallback: readAvatarUrlFromUserMetadata(user),
+      telegramUsername: readTelegramUsernameFromUserMetadata(u),
+      authAvatarFallback: readAvatarUrlFromUserMetadata(u),
     });
+  };
 
   type ServiceSaveResult =
     | { kind: "ok"; row: Record<string, unknown> }
@@ -448,7 +451,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
 
     const r = await serviceUpdateOrInsert(updateSnakeBase);
     if (r.kind === "ok") {
-      return successResponse(profileFromRow(r.row));
+      return successResponse(await profileFromRow(r.row));
     }
     if (r.kind === "duplicate_email") {
       return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
@@ -497,20 +500,20 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       const { data: dataSnakeNoDob, error: errorSnakeNoDob } = await tryUpsert(snakeNoDob);
       const rowSnakeNoDob = firstRow(dataSnakeNoDob);
       if (!errorSnakeNoDob && rowSnakeNoDob) {
-        return successResponse(profileFromRow(rowSnakeNoDob));
+        return successResponse(await profileFromRow(rowSnakeNoDob));
       }
 
       const { data: dataCamelNoDob, error: errorCamelNoDob } = await tryUpsert(camelNoDob);
       const rowCamelNoDob = firstRow(dataCamelNoDob);
       if (!errorCamelNoDob && rowCamelNoDob) {
-        return successResponse(profileFromRow(rowCamelNoDob));
+        return successResponse(await profileFromRow(rowCamelNoDob));
       }
 
       const legacy = updateLegacyStarter();
       const { data: dataLegacy, error: errorLegacy } = await tryUpsert(legacy);
       const rowLegacy = firstRow(dataLegacy);
       if (!errorLegacy && rowLegacy) {
-        return successResponse(profileFromRow(rowLegacy));
+        return successResponse(await profileFromRow(rowLegacy));
       }
 
       const { data: dataMinimal, error: errorMinimal } = await tryUpsert({
@@ -520,13 +523,13 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       });
       const rowMinimal = firstRow(dataMinimal);
       if (!errorMinimal && rowMinimal) {
-        return successResponse(profileFromRow(rowMinimal));
+        return successResponse(await profileFromRow(rowMinimal));
       }
 
       {
         const rSvc = await serviceUpdateOrInsert(updateSnakeBase);
         if (rSvc.kind === "ok") {
-          return successResponse(profileFromRow(rSvc.row));
+          return successResponse(await profileFromRow(rSvc.row));
         }
         if (rSvc.kind === "duplicate_email") {
           return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
@@ -537,7 +540,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
           email: profileEmail,
         });
         if (rMin.kind === "ok") {
-          return successResponse(profileFromRow(rMin.row));
+          return successResponse(await profileFromRow(rMin.row));
         }
         if (rMin.kind === "duplicate_email") {
           return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
@@ -560,9 +563,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       );
     }
 
-    return successResponse(profileFromRow(rowCamel));
+    return successResponse(await profileFromRow(rowCamel));
   }
 
-  return successResponse(profileFromRow(rowSnake));
+  return successResponse(await profileFromRow(rowSnake));
 }
 

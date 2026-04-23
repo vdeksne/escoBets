@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
+import { fetchUserFromAuthServer } from "@/lib/auth/fetch-user-from-auth-server";
 import { readTelegramIdFromUserMetadata } from "@/lib/account/telegram-profile-email";
 import type { ApiError, ApiSuccess } from "@/types/api";
 
@@ -20,13 +21,15 @@ function err(m: string, status: number, code: string): Res {
 export async function POST(): Promise<Res> {
   const supabase = await createClient();
   const {
-    data: { user },
+    data: { user: sessionUser },
     error: uErr,
   } = await supabase.auth.getUser();
-  if (uErr || !user) {
+  if (uErr || !sessionUser) {
     return err("Authentication required.", 401, "UNAUTHORIZED");
   }
-  if (!readTelegramIdFromUserMetadata(user)) {
+
+  const canonical = (await fetchUserFromAuthServer(sessionUser.id)) ?? sessionUser;
+  if (!readTelegramIdFromUserMetadata(canonical)) {
     return err("No linked Telegram in profile metadata.", 400, "TELEGRAM_NOT_LINKED");
   }
 
@@ -35,11 +38,11 @@ export async function POST(): Promise<Res> {
     return err("Service not configured.", 503, "SERVICE_NOT_CONFIGURED");
   }
 
-  const prev = { ...(user.user_metadata ?? {}) } as Record<string, unknown>;
+  const prev = { ...(canonical.user_metadata ?? {}) } as Record<string, unknown>;
   delete prev.telegram_id;
   delete prev.telegram_username;
 
-  const { error: updErr } = await service.auth.admin.updateUserById(user.id, {
+  const { error: updErr } = await service.auth.admin.updateUserById(sessionUser.id, {
     user_metadata: prev,
   });
   if (updErr) {
@@ -48,7 +51,7 @@ export async function POST(): Promise<Res> {
   const { error: profErr } = await service
     .from("profiles")
     .update({ telegram_id: null })
-    .eq("id", user.id);
+    .eq("id", sessionUser.id);
   if (profErr) {
     console.error("[telegram/unlink] profiles update:", profErr.message);
   }

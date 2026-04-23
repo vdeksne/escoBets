@@ -5,21 +5,24 @@ type PromoBannerProps = {
   imageSrc?: string;
 };
 
+/**
+ * Responsive, full-width art with no cropping: intrinsic scaling (`w-full` + `h-auto`).
+ * No border/shadow; any frame in the UI was removed so only the file content shows.
+ * If the PNG itself includes a yellow outline or side bars, replace the asset to drop those.
+ */
 export function PromoBanner({ imageSrc = "/images/Ad.png" }: PromoBannerProps = {}) {
   return (
-    <section className="px-4 py-6">
-      <div className="container mx-auto">
-        <div className="relative aspect-[3/1] w-full min-h-[120px] overflow-visible rounded-lg md:min-h-[160px]">
-          <div className="absolute inset-4 md:inset-6">
-            <Image
-              src={imageSrc}
-              alt=""
-              fill
-              className="object-contain object-center"
-              sizes="(max-width: 768px) 100vw, 1200px"
-            />
-          </div>
-        </div>
+    <section className="py-4 sm:py-6">
+      <div className="mx-auto w-full max-w-6xl px-4">
+        <Image
+          src={imageSrc}
+          alt="EscoBets promotion"
+          width={1920}
+          height={640}
+          className="h-auto w-full max-w-full select-none"
+          sizes="(max-width: 1280px) 100vw, 1152px"
+          priority={false}
+        />
       </div>
     </section>
   );

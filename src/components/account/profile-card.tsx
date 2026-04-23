@@ -137,6 +137,7 @@ export function ProfileCard({ profile, onSocialUpdate, className }: ProfileCardP
         open={socialOpen}
         onClose={() => setSocialOpen(false)}
         accountEmail={profile.email}
+        socialLinksFromProfile={profile.socialLinks}
         onUpdated={() => onSocialUpdate?.()}
       />
     </div>

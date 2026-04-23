@@ -25,14 +25,21 @@ type Props = {
   onClose: () => void;
   /** Profile email (detects Telegram-only sign-in without an OAuth identity row). */
   accountEmail: string;
+  /** From GET /api/account/profile — matches Auth DB, fixes “Connected” when the session JWT lags. */
+  socialLinksFromProfile?: SocialLink[] | null;
   onUpdated: () => void;
 };
 
-function providerLinked(
+function isProviderLinked(
   p: SocialLink["provider"],
   user: User,
-  accountEmail: string
+  accountEmail: string,
+  socialLinksFromProfile?: SocialLink[] | null
 ): boolean {
+  const fromApi = socialLinksFromProfile?.find((l) => l.provider === p)?.linked;
+  if (typeof fromApi === "boolean") {
+    return fromApi;
+  }
   if (findUserIdentity(user, p)) return true;
   if (p === "telegram") {
     if (isTelegramPlaceholderEmail(accountEmail)) return true;
@@ -54,7 +61,13 @@ function isManualLinkingDisabledError(msg: string): boolean {
  * Connect / disconnect OAuth providers via Supabase `linkIdentity` / `unlinkIdentity`.
  * Requires "Manual identity linking" enabled in Supabase → Authentication.
  */
-export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }: Props) {
+export function SocialAccountsManager({
+  open,
+  onClose,
+  accountEmail,
+  socialLinksFromProfile,
+  onUpdated,
+}: Props) {
   const supabase = React.useMemo(() => createClient(), []);
   const [user, setUser] = React.useState<User | null>(null);
   const [loading, setLoading] = React.useState(false);
@@ -65,6 +78,15 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
     const { data } = await supabase.auth.getUser();
     setUser(data.user);
   }, [supabase]);
+
+  /** After `updateUserById` / admin auth changes, JWT `user_metadata` is stale until refreshed. */
+  const refreshUserAfterServerAuthChange = React.useCallback(async () => {
+    const { error } = await supabase.auth.refreshSession();
+    if (error) {
+      console.error("Session refresh after provider change:", error.message);
+    }
+    await refreshUser();
+  }, [supabase, refreshUser]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -119,7 +141,12 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
       const u = data.user;
       const ident = findUserIdentity(u, p);
 
-      if (p === "telegram" && !ident && readTelegramIdFromUserMetadata(u)) {
+      const telegramLinkFromApi = socialLinksFromProfile?.find((l) => l.provider === p)?.linked;
+      if (
+        p === "telegram" &&
+        !ident &&
+        (readTelegramIdFromUserMetadata(u) || telegramLinkFromApi === true)
+      ) {
         const res = await fetch("/api/account/telegram/unlink", { method: "POST", credentials: "include" });
         const json = (await res.json()) as
           | { success: true }
@@ -132,7 +159,7 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
           return;
         }
         setMessage({ type: "ok", text: "Telegram removed from this account." });
-        await refreshUser();
+        await refreshUserAfterServerAuthChange();
         onUpdated();
         return;
       }
@@ -147,7 +174,7 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
         return;
       }
       setMessage({ type: "ok", text: "Disconnected." });
-      await refreshUser();
+      await refreshUserAfterServerAuthChange();
       onUpdated();
     } finally {
       setLoading(false);
@@ -234,7 +261,7 @@ export function SocialAccountsManager({ open, onClose, accountEmail, onUpdated }
         <ul className="flex flex-col gap-2">
           {user &&
             (["google", "x", "telegram"] as const).map((p) => {
-              const linked = providerLinked(p, user, accountEmail);
+              const linked = isProviderLinked(p, user, accountEmail, socialLinksFromProfile);
               const canLink = isLinkIdentitySupported(p);
               const label = socialProviderLabel(p);
               const icon = SOCIAL_ICONS[p]?.icon;
