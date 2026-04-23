@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe/server";
+import { getStripe, isStripeSecretConfigured } from "@/lib/stripe/server";
 
 async function getOrigin() {
   const h = await headers();
@@ -20,6 +20,10 @@ async function getOrCreateCustomerId(email: string) {
 }
 
 export async function GET() {
+  const origin = await getOrigin();
+  if (!isStripeSecretConfigured()) {
+    return NextResponse.redirect(new URL("/account/subscription?stripe=missing", origin));
+  }
   try {
     const stripe = getStripe();
     const supabase = await createClient();
@@ -28,11 +32,11 @@ export async function GET() {
     } = await supabase.auth.getUser();
 
     if (!user?.email) {
-      return NextResponse.redirect(new URL("/login", await getOrigin()));
+      return NextResponse.redirect(new URL("/login", origin));
     }
 
     const customerId = await getOrCreateCustomerId(user.email);
-    const returnUrl = new URL("/account/subscription", await getOrigin()).toString();
+    const returnUrl = new URL("/account/subscription", origin).toString();
 
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
@@ -41,7 +45,7 @@ export async function GET() {
 
     return NextResponse.redirect(session.url);
   } catch {
-    return NextResponse.redirect(new URL("/account/subscription", await getOrigin()));
+    return NextResponse.redirect(new URL("/account/subscription?stripe=error", origin));
   }
 }
 

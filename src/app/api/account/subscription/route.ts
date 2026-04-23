@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe/server";
+import { getStripe, isStripeSecretConfigured } from "@/lib/stripe/server";
+import { STRIPE_ENV_HELP } from "@/lib/stripe/env-help";
 import { createClient } from "@/lib/supabase/server";
 import type { SubscriptionAccountData } from "@/types/subscription-account";
 
@@ -46,6 +47,17 @@ async function resolvePlanName(stripe: ReturnType<typeof getStripe>, price: Stri
 }
 
 export async function GET() {
+  if (!isStripeSecretConfigured()) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "STRIPE_NOT_CONFIGURED" as const,
+          message: STRIPE_ENV_HELP,
+        },
+      },
+      { status: 503 }
+    );
+  }
   try {
     const stripe = getStripe();
     const supabase = await createClient();
@@ -130,7 +142,10 @@ export async function GET() {
     return NextResponse.json(data);
   } catch (e) {
     const message = e instanceof Error ? e.message : "Stripe error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: { code: "STRIPE_ERROR" as const, message } },
+      { status: 500 }
+    );
   }
 }
 
