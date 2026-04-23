@@ -372,6 +372,86 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       authAvatarFallback: readAvatarUrlFromUserMetadata(user),
     });
 
+  type ServiceSaveResult =
+    | { kind: "ok"; row: Record<string, unknown> }
+    | { kind: "no_service" }
+    | { kind: "error" }
+    | { kind: "duplicate_email" };
+
+  /**
+   * `upsert` can hit `INSERT` when the client can’t see the row, and a duplicate
+   * `profiles_email_key` if another row already holds this email. Prefer UPDATE by id, else INSERT.
+   */
+  const serviceUpdateOrInsert = async (fullRow: Record<string, unknown>): Promise<ServiceSaveResult> => {
+    const service = createServiceRoleClient();
+    if (!service) return { kind: "no_service" };
+
+    const { data: forUserId } = await service
+      .from("profiles")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const { id: _id, ...updateFields } = fullRow as { id: string } & Record<string, unknown>;
+
+    if (forUserId) {
+      const { data, error } = await service
+        .from("profiles")
+        .update(updateFields)
+        .eq("id", user.id)
+        .select("*");
+      if (error) return { kind: "error" };
+      const r = firstRow(data);
+      if (r) return { kind: "ok", row: r };
+      return { kind: "error" };
+    }
+
+    const { data, error } = await service.from("profiles").insert(fullRow).select("*");
+    if (error) {
+      if (error.code === "23505" || String(error.message).includes("profiles_email_key")) {
+        return { kind: "duplicate_email" };
+      }
+      return { kind: "error" };
+    }
+    const r = firstRow(data);
+    if (r) return { kind: "ok", row: r };
+    return { kind: "error" };
+  };
+
+  const emailConflictMessage =
+    "This email is already on a different `profiles` row. In Supabase → Table editor → `profiles`, delete the duplicate (keep the row whose `id` matches Authentication → Users) or change that row’s email, then try again.";
+
+  const saveWithService = async (): Promise<NextResponse<ProfileResponse> | null> => {
+    const service = createServiceRoleClient();
+    if (!service) return null;
+
+    const { data: emailRow } = await service
+      .from("profiles")
+      .select("id")
+      .eq("email", profileEmail)
+      .maybeSingle();
+    if (emailRow && emailRow.id !== user.id) {
+      return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage, {
+        existingProfileUserId: emailRow.id,
+        yourAuthUserId: user.id,
+      });
+    }
+
+    const r = await serviceUpdateOrInsert(updateSnakeBase);
+    if (r.kind === "ok") {
+      return successResponse(profileFromRow(r.row));
+    }
+    if (r.kind === "duplicate_email") {
+      return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
+    }
+    return null;
+  };
+
+  const serviceFirst = await saveWithService();
+  if (serviceFirst) {
+    return serviceFirst;
+  }
+
   const { data: dataSnake, error: errorSnake } = await tryUpsert(updateSnakeBase);
   const rowSnake = firstRow(dataSnake);
 
@@ -434,33 +514,33 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
         return successResponse(profileFromRow(rowMinimal));
       }
 
-      const service = createServiceRoleClient();
-      if (service) {
-        const { data: dataSvc, error: errorSvc } = await service
-          .from("profiles")
-          .upsert(updateSnakeBase, { onConflict: "id" })
-          .select("*");
-        const rowSvc = firstRow(dataSvc);
-        if (!errorSvc && rowSvc) {
-          return successResponse(profileFromRow(rowSvc));
+      {
+        const rSvc = await serviceUpdateOrInsert(updateSnakeBase);
+        if (rSvc.kind === "ok") {
+          return successResponse(profileFromRow(rSvc.row));
         }
-        const { data: dataSvcMin, error: errorSvcMin } = await service
-          .from("profiles")
-          .upsert(
-            { id: user.id, user_name, email: profileEmail },
-            { onConflict: "id" }
-          )
-          .select("*");
-        const rowSvcMin = firstRow(dataSvcMin);
-        if (!errorSvcMin && rowSvcMin) {
-          return successResponse(profileFromRow(rowSvcMin));
+        if (rSvc.kind === "duplicate_email") {
+          return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
         }
-        return errorResponse(
-          500,
-          "PROFILE_SAVE_FAILED",
-          "Failed to save profile. User session upserts failed; service role upsert also failed. Check SUPABASE_SERVICE_ROLE_KEY on the server, profiles RLS, and table columns.",
-          `${errorSnake.message}; user minimal: ${errorMinimal?.message ?? "n/a"}; svc: ${errorSvc?.message ?? "n/a"}; svc-min: ${errorSvcMin?.message ?? "n/a"}`
-        );
+        const rMin = await serviceUpdateOrInsert({
+          id: user.id,
+          user_name,
+          email: profileEmail,
+        });
+        if (rMin.kind === "ok") {
+          return successResponse(profileFromRow(rMin.row));
+        }
+        if (rMin.kind === "duplicate_email") {
+          return errorResponse(409, "PROFILE_EMAIL_CONFLICT", emailConflictMessage);
+        }
+        if (rSvc.kind !== "no_service" || rMin.kind !== "no_service") {
+          return errorResponse(
+            500,
+            "PROFILE_SAVE_FAILED",
+            "Failed to save profile. User session upserts failed; service role update/insert also failed. Check profiles column names, RLS, and SUPABASE_SERVICE_ROLE_KEY on the server.",
+            `${errorSnake.message}; user minimal: ${errorMinimal?.message ?? "n/a"}; svc: ${rSvc.kind}; svc-min: ${rMin.kind}`
+          );
+        }
       }
 
       return errorResponse(

@@ -134,40 +134,76 @@ export async function POST(request: Request): Promise<NextResponse<UploadRespons
       .replace(/^_|_$/g, "")
       .slice(0, 255) || "user";
 
-  const { data: upData, error: upError } = await supabase
+  /**
+   * 1) Update by `id` only (no `email` in the payload) — avoids
+   *    `duplicate key value violates unique constraint "profiles_email_key"`
+   *    when a row for this user exists but the session/RLS path returned 0 rows.
+   * 2) If still no row, `INSERT` — if that email is already used by *another* id, return 409.
+   */
+  const { data: svcUpdated, error: svcUpdateErr } = await admin
     .from("profiles")
-    .upsert(
-      { id: user.id, user_name: userName, email, avatar_url: publicUrl },
-      { onConflict: "id" }
-    )
+    .update({ avatar_url: publicUrl, user_name: userName })
+    .eq("id", user.id)
     .select("id");
 
-  if (!upError && upData?.length) {
+  if (svcUpdateErr) {
+    return errorResponse(500, "AVATAR_SAVE_FAILED", "Could not update profile.", svcUpdateErr.message);
+  }
+  if (svcUpdated?.length) {
     return successResponse({ avatarUrl: publicUrl });
   }
 
-  if (admin) {
-    const { data: aData, error: aError } = await admin
+  const { data: inserted, error: insertErr } = await admin
+    .from("profiles")
+    .insert({ id: user.id, user_name: userName, email, avatar_url: publicUrl })
+    .select("id");
+
+  if (!insertErr && inserted?.length) {
+    return successResponse({ avatarUrl: publicUrl });
+  }
+
+  const msg = insertErr?.message ?? "";
+  const isEmailDuplicate =
+    insertErr?.code === "23505" ||
+    msg.includes("profiles_email_key") ||
+    (msg.toLowerCase().includes("duplicate") && msg.toLowerCase().includes("email"));
+
+  if (isEmailDuplicate) {
+    const { data: byEmail, error: selErr } = await admin
       .from("profiles")
-      .upsert(
-        { id: user.id, user_name: userName, email, avatar_url: publicUrl },
-        { onConflict: "id" }
-      )
-      .select("id");
-    if (!aError && aData?.length) {
-      return successResponse({ avatarUrl: publicUrl });
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (selErr) {
+      return errorResponse(500, "AVATAR_SAVE_FAILED", "Could not resolve email conflict.", selErr.message);
     }
-    return errorResponse(
-      500,
-      "AVATAR_SAVE_FAILED",
-      "Could not create or update your profile row. Check Supabase RLS and profiles columns.",
-      aError?.message ?? upError?.message
-    );
+
+    if (byEmail?.id === user.id) {
+      const { data: fix } = await admin
+        .from("profiles")
+        .update({ avatar_url: publicUrl, user_name: userName })
+        .eq("id", user.id)
+        .select("id");
+      if (fix?.length) {
+        return successResponse({ avatarUrl: publicUrl });
+      }
+    }
+
+    if (byEmail && byEmail.id !== user.id) {
+      return errorResponse(
+        409,
+        "PROFILE_EMAIL_CONFLICT",
+        "The address is already on another profile row in the database. In Supabase → Table Editor → profiles, remove the duplicate row for this email or fix the `id` to match your auth user, then try again.",
+        { existingProfileUserId: byEmail.id, authUserId: user.id }
+      );
+    }
   }
 
   return errorResponse(
     500,
     "AVATAR_SAVE_FAILED",
-    upError?.message ?? "Could not create profile row. Save your profile in the form once, or set SUPABASE_SERVICE_ROLE_KEY on the server."
+    "Could not create or update your profile row after upload.",
+    insertErr?.message ?? msg
   );
 }
