@@ -392,7 +392,8 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
       .eq("id", user.id)
       .maybeSingle();
 
-    const { id: _id, ...updateFields } = fullRow as { id: string } & Record<string, unknown>;
+    const updateFields = { ...fullRow };
+    delete (updateFields as { id?: unknown }).id;
 
     if (forUserId) {
       const { data, error } = await service
