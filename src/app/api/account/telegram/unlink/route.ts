@@ -45,5 +45,12 @@ export async function POST(): Promise<Res> {
   if (updErr) {
     return err(updErr.message, 500, "UPDATE_FAILED");
   }
+  const { error: profErr } = await service
+    .from("profiles")
+    .update({ telegram_id: null })
+    .eq("id", user.id);
+  if (profErr) {
+    console.error("[telegram/unlink] profiles update:", profErr.message);
+  }
   return NextResponse.json({ success: true, data: { ok: true } } satisfies ApiSuccess<{ ok: true }>);
 }

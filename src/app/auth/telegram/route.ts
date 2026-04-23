@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { verifyTelegramWidgetParams } from "@/lib/auth/verify-telegram-widget";
+import { resolveAuthEmailForTelegramLogin } from "@/lib/auth/resolve-auth-email-for-telegram-login";
 import { isEscobetsStorageAvatarUrl } from "@/lib/account/telegram-profile-email";
 
 function safeNextPath(raw: string | null): string {
@@ -46,13 +47,14 @@ export async function GET(request: NextRequest) {
   }
 
   const { id, first_name, last_name, username, photo_url } = verified.data;
-  const email = `tg_${id}@telegram.escobets.invalid`;
   const fullName =
     [first_name, last_name].filter(Boolean).join(" ").trim() || first_name || "Telegram user";
 
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+
+  const email = await resolveAuthEmailForTelegramLogin(admin, id);
 
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: "magiclink",
@@ -126,6 +128,7 @@ export async function GET(request: NextRequest) {
     email,
     first_name: first_name,
     last_name: last_name ?? null,
+    telegram_id: id,
   };
   if (photo_url && !isEscobetsStorageAvatarUrl(existingUrl)) {
     upsertPayload.avatar_url = photo_url;
@@ -140,6 +143,7 @@ export async function GET(request: NextRequest) {
       id: userId,
       first_name: first_name,
       last_name: last_name ?? null,
+      telegram_id: id,
     };
     if (photo_url && !isEscobetsStorageAvatarUrl(existingUrl)) {
       minimal.avatar_url = photo_url;

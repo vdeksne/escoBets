@@ -81,5 +81,22 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  const tgKey = String(id);
+  const { error: clearErr } = await service
+    .from("profiles")
+    .update({ telegram_id: null })
+    .eq("telegram_id", tgKey)
+    .neq("id", user.id);
+  if (clearErr) {
+    console.error("[auth/telegram-link] profiles clear other telegram_id:", clearErr.message);
+  }
+  const { error: profErr } = await service.from("profiles").upsert(
+    { id: user.id, telegram_id: tgKey },
+    { onConflict: "id" }
+  );
+  if (profErr) {
+    console.error("[auth/telegram-link] profiles upsert:", profErr.message);
+  }
+
   return NextResponse.redirect(new URL("/account?telegram=linked", origin));
 }

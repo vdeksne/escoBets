@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { readAvatarUrlFromUserMetadata, readTelegramUsernameFromUserMetadata } from "@/lib/account/telegram-profile-email";
+import {
+  readAvatarUrlFromUserMetadata,
+  readTelegramIdFromUserMetadata,
+  readTelegramUsernameFromUserMetadata,
+} from "@/lib/account/telegram-profile-email";
 import { buildSocialLinksFromUser } from "@/lib/account/social-links-from-user";
 import type { ApiError, ApiSuccess } from "@/types/api";
 import type { Profile, ProfileAddress } from "@/types/account";
@@ -244,6 +248,21 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
 
   if (error) {
     return errorResponse(500, "PROFILE_FETCH_FAILED", "Failed to load profile.", error.message);
+  }
+
+  const metaTg = readTelegramIdFromUserMetadata(user);
+  const rowTg =
+    row && typeof (row as { telegram_id?: unknown }).telegram_id === "string"
+      ? (row as { telegram_id: string }).telegram_id
+      : null;
+  if (metaTg && metaTg !== rowTg) {
+    const sr = createServiceRoleClient();
+    if (sr) {
+      void sr.from("profiles").upsert(
+        { id: user.id, telegram_id: metaTg },
+        { onConflict: "id" }
+      );
+    }
   }
 
   return successResponse(
