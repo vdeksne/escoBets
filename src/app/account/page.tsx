@@ -66,6 +66,18 @@ export default function AccountPage() {
     });
   };
 
+  const handleRefreshProfile = async () => {
+    try {
+      const res = await fetch("/api/account/profile", { cache: "no-store" });
+      const json = (await res.json()) as ApiResponse<Profile>;
+      if (res.ok && json.success) {
+        setProfile(json.data);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const handleDeleteAccount = async () => {
     const res = await fetch("/api/account", { method: "DELETE" });
     const json = (await res.json()) as ApiResponse<{ ok: true }>;
@@ -111,6 +123,7 @@ export default function AccountPage() {
             onUploadAvatar={handleUploadAvatar}
             onDeleteAvatar={handleDeleteAvatar}
             onDeleteAccount={handleDeleteAccount}
+            onRefreshProfile={handleRefreshProfile}
           />
           {loading ? (
             <p className="mt-4 font-gotham text-sm text-white/50">Loading profile…</p>

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import {
-  isTelegramPlaceholderEmail,
-  readAvatarUrlFromUserMetadata,
-  readTelegramUsernameFromUserMetadata,
-} from "@/lib/account/telegram-profile-email";
+import { readAvatarUrlFromUserMetadata, readTelegramUsernameFromUserMetadata } from "@/lib/account/telegram-profile-email";
+import { buildSocialLinksFromUser } from "@/lib/account/social-links-from-user";
 import type { ApiError, ApiSuccess } from "@/types/api";
-import type { Profile, ProfileAddress, SocialLink } from "@/types/account";
+import type { Profile, ProfileAddress } from "@/types/account";
 
 type ProfilePayload = Partial<
   Pick<Profile, "firstName" | "lastName" | "phone" | "dateOfBirth" | "avatarUrl" | "email" | "address">
@@ -38,15 +36,6 @@ function errorResponse(
 
 function successResponse<T>(data: T): NextResponse<ApiSuccess<T>> {
   return NextResponse.json({ success: true, data });
-}
-
-function defaultSocialLinks(): SocialLink[] {
-  return [
-    { id: "google", provider: "google", linked: false },
-    { id: "x", provider: "x", linked: false },
-    { id: "telegram", provider: "telegram", linked: false },
-    { id: "linkedin", provider: "linkedin", linked: false },
-  ];
 }
 
 function splitFullName(full: string): { first: string; last: string } {
@@ -173,6 +162,7 @@ function deriveUserName(
 function toProfile(params: {
   userId: string;
   email: string;
+  user: User;
   row?: Record<string, unknown> | null;
   telegramUsername?: string | null;
   /** Used when `profiles.avatar_url` is empty (e.g. Telegram OAuth photo only in auth metadata). */
@@ -218,10 +208,7 @@ function toProfile(params: {
 
   const rowEmail = getString("email", "user_email", "userEmail");
   const resolvedEmail = rowEmail || params.email;
-  const baseLinks = defaultSocialLinks();
-  const socialLinks = isTelegramPlaceholderEmail(resolvedEmail)
-    ? baseLinks.map((l) => (l.provider === "telegram" ? { ...l, linked: true } : l))
-    : baseLinks;
+  const socialLinks = buildSocialLinksFromUser(params.user, resolvedEmail);
 
   const rowAvatarRaw = getOptionalString("avatar_url", "avatarUrl", "avatarurl");
   const rowAvatar = rowAvatarRaw?.trim();
@@ -263,6 +250,7 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
     toProfile({
       userId: user.id,
       email: user.email ?? "",
+      user,
       row,
       telegramUsername: readTelegramUsernameFromUserMetadata(user),
       authAvatarFallback: readAvatarUrlFromUserMetadata(user),
@@ -367,6 +355,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ProfileRes
     toProfile({
       userId: user.id,
       email: profileEmail,
+      user,
       row,
       telegramUsername,
       authAvatarFallback: readAvatarUrlFromUserMetadata(user),
