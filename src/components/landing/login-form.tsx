@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { OAuthSocialButtons } from "@/components/landing/oauth-social-buttons";
+import { isDemoModeClient } from "@/lib/demo-mode";
 import { cn } from "@/lib/utils";
 
 /** Match mockup: 1.333px #FFF border, pill radius; glass fill; soft autofill like signup. */
@@ -107,6 +108,7 @@ export function LoginForm({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isDemoModeClient) return;
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsSubmitting(true);
@@ -163,6 +165,14 @@ export function LoginForm({
       <p className="mt-1 font-gotham text-sm text-white/90">
         Glad you&apos;re back
       </p>
+      {isDemoModeClient ? (
+        <p
+          className="mt-3 font-gotham text-xs leading-relaxed text-white/55"
+          role="note"
+        >
+          Static demo: this page is for preview only — email and social sign-in are turned off.
+        </p>
+      ) : null}
 
       <form
         className="login-form mt-5 sm:mt-6 flex flex-col gap-3 sm:gap-4"
@@ -212,7 +222,12 @@ export function LoginForm({
           Remember me
         </label>
 
-        <Button type="submit" className="w-full rounded-[0.83331rem]" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full rounded-[0.83331rem]"
+          disabled={isSubmitting || isDemoModeClient}
+          title={isDemoModeClient ? "Sign-in is disabled in static demo mode." : undefined}
+        >
           {isSubmitting ? "Logging in..." : "Login"}
         </Button>
         {successMessage ? (
@@ -250,7 +265,7 @@ export function LoginForm({
         <div className="flex-grow border-t border-white/30" />
       </div>
 
-      <OAuthSocialButtons nextPath={oauthNextPath} />
+      <OAuthSocialButtons nextPath={oauthNextPath} disabled={isDemoModeClient} />
 
       <p className="mt-5 sm:mt-6 text-center font-gotham text-sm text-white">
         Don&apos;t have an account ?{" "}

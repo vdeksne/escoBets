@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createClient } from "@/lib/supabase/server";
 import { MOCK_NEWS_POSTS, MOCK_UPDATES_STATS } from "@/lib/updates/mock-data";
 import type { NewsPostAdmin, NewsPostStatus } from "@/types/news-post";
@@ -145,7 +146,7 @@ export async function GET(
   }
 
   try {
-    const dbPosts = await fetchUpdatesFromSupabase();
+    const dbPosts = isDemoMode() ? null : await fetchUpdatesFromSupabase();
     const allPosts = dbPosts ?? MOCK_NEWS_POSTS;
 
     const filtered = allPosts.filter((post) => {

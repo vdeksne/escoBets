@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Home, LayoutDashboard, Megaphone, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  CreditCard,
+  Home,
+  LayoutDashboard,
+  Megaphone,
+  Users,
+} from "lucide-react";
 import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { cn } from "@/lib/utils";
@@ -28,6 +35,13 @@ const tiles: AdminTile[] = [
     title: "Users",
     description: "View members, roles, and subscription-related status in one place.",
     icon: <Users className="h-6 w-6" strokeWidth={1.75} />,
+    featured: true,
+  },
+  {
+    href: "/admin/subscription",
+    title: "Subscription",
+    description: "Preview the public subscription funnel and form — same experience visitors see.",
+    icon: <CreditCard className="h-6 w-6" strokeWidth={1.75} />,
     featured: true,
   },
   {

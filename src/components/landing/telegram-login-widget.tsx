@@ -29,6 +29,8 @@ interface TelegramLoginWidgetProps {
   variant?: "signin" | "link";
   /** Outer layout (e.g. match Google/X circular buttons). */
   className?: string;
+  /** When true, button is inert (e.g. static demo login preview). */
+  disabled?: boolean;
 }
 
 const TG_SCRIPT_SRC = "https://telegram.org/js/telegram-widget.js?23";
@@ -89,6 +91,7 @@ export function TelegramLoginWidget({
   nextPath = "/account",
   variant = "signin",
   className,
+  disabled = false,
 }: TelegramLoginWidgetProps) {
   const [botId, setBotId] = React.useState<string | null>(null);
   const [botIdLoaded, setBotIdLoaded] = React.useState(false);
@@ -167,6 +170,7 @@ export function TelegramLoginWidget({
   const canUseTelegram = Boolean(botId && scriptReady && typeof window !== "undefined" && window.Telegram?.Login?.auth);
 
   const startTelegram = React.useCallback(() => {
+    if (disabled) return;
     if (!botId) return;
     const login = window.Telegram?.Login?.auth;
     if (!login) return;
@@ -183,7 +187,7 @@ export function TelegramLoginWidget({
       const q = authDataToSearchParams(data as Record<string, unknown>);
       window.location.assign(`${window.location.origin}${targetPath}?${q}`);
     });
-  }, [botId, nextPath, variant]);
+  }, [botId, nextPath, variant, disabled]);
 
   const disabledHint = tokenMissingOnServer
     ? "Telegram sign-in: set TELEGRAM_BOT_TOKEN on the server (.env.local or hosting env), restart the app, and link the domain in @BotFather."
@@ -195,14 +199,16 @@ export function TelegramLoginWidget({
         type="button"
         className={cn(
           "relative h-10 w-10 shrink-0 overflow-hidden p-0",
-          !canUseTelegram && "cursor-not-allowed opacity-40",
+          (!canUseTelegram || disabled) && "cursor-not-allowed opacity-40",
           className
         )}
-        disabled={!canUseTelegram}
+        disabled={disabled || !canUseTelegram}
         onClick={startTelegram}
         aria-label={variant === "link" ? "Link Telegram to this account" : "Continue with Telegram"}
         title={
-          canUseTelegram
+          disabled
+            ? "Sign-in is disabled in static demo mode."
+            : canUseTelegram
             ? variant === "link"
               ? "Link Telegram to this account"
               : "Continue with Telegram"

@@ -367,7 +367,7 @@ export function SubscriptionForm({ className }: { className?: string }) {
                         Secure checkout
                       </p>
                       <p className="mt-0.5 font-gotham text-xs text-white/40">
-                        Card or wallet — hosted by our partner
+                        Card or wallet - hosted by our partner
                       </p>
                     </div>
                   </button>
@@ -399,7 +399,7 @@ export function SubscriptionForm({ className }: { className?: string }) {
                       partner&apos;s hosted checkout: a separate, encrypted page
                       where you enter card or wallet details. They process the
                       charge, run standard fraud checks, and only pass us what
-                      we need to turn on your membership—not your full card
+                      we need to turn on your membership, not your full card
                       number. If the button stays disabled, add the hosted
                       checkout URLs in your environment variables and redeploy.
                     </p>
@@ -609,7 +609,7 @@ export function SubscriptionForm({ className }: { className?: string }) {
                       disabled
                       className="w-full rounded-[0.83331rem] border-white/30 bg-black/30 font-gotham text-white/65 sm:w-auto sm:min-w-[14rem]"
                     >
-                      Request bank details — coming soon
+                      Request bank details - coming soon
                     </Button>
                     <p className="font-gotham text-[13px] leading-snug text-white/65">
                       Placeholder: email{" "}

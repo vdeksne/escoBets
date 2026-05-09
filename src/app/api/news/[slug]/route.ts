@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { MOCK_NEWS_ARTICLES } from "@/lib/news/mock-data";
-import type { NewsArticle, NewsArticleSection } from "@/types/news";
+import { getPublicNewsArticleBySlug } from "@/lib/news/get-public-news-article";
+import type { NewsArticle } from "@/types/news";
 import type { ApiError, ApiSuccess } from "@/types/api";
 
 type NewsDetailResponse = ApiSuccess<NewsArticle> | ApiError;
@@ -28,83 +27,6 @@ function successResponse<T>(data: T): NextResponse<ApiSuccess<T>> {
   });
 }
 
-function toStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
-}
-
-function toBodySections(value: unknown): NewsArticleSection[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const sections = value
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const maybeSection = item as { heading?: unknown; content?: unknown };
-      if (
-        typeof maybeSection.heading !== "string" ||
-        typeof maybeSection.content !== "string"
-      ) {
-        return null;
-      }
-      return { heading: maybeSection.heading, content: maybeSection.content };
-    })
-    .filter((item): item is NewsArticleSection => item !== null);
-  return sections.length > 0 ? sections : undefined;
-}
-
-function normalizeNewsArticle(row: Record<string, unknown>): NewsArticle | null {
-  const id = row.id;
-  const headline = row.headline;
-  const imageUrl = row.imageUrl;
-  const date = row.date;
-
-  if (
-    typeof id !== "string" ||
-    typeof headline !== "string" ||
-    typeof imageUrl !== "string" ||
-    typeof date !== "string"
-  ) {
-    return null;
-  }
-
-  return {
-    id,
-    slug: typeof row.slug === "string" ? row.slug : undefined,
-    imageUrl,
-    date,
-    headline,
-    excerpt: typeof row.excerpt === "string" ? row.excerpt : undefined,
-    tags: toStringArray(row.tags),
-    body: toBodySections(row.body),
-    tableOfContents: toStringArray(row.tableOfContents),
-    author: typeof row.author === "string" ? row.author : undefined,
-    category: typeof row.category === "string" ? row.category : undefined,
-    readingTime: typeof row.readingTime === "string" ? row.readingTime : undefined,
-    likes: typeof row.likes === "number" ? row.likes : undefined,
-    views: typeof row.views === "number" ? row.views : undefined,
-    comments: typeof row.comments === "number" ? row.comments : undefined,
-  };
-}
-
-async function fetchNewsBySlugFromSupabase(slug: string): Promise<NewsArticle | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("news")
-    .select("*")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error || !data || typeof data !== "object") {
-    return null;
-  }
-
-  const row = data as Record<string, unknown>;
-  if (row.is_draft === true) {
-    return null;
-  }
-
-  return normalizeNewsArticle(row);
-}
-
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ slug: string }> }
@@ -121,20 +43,11 @@ export async function GET(
   }
 
   try {
-    const fromDb = await fetchNewsBySlugFromSupabase(normalizedSlug);
-    if (fromDb) {
-      return successResponse(fromDb);
-    }
-
-    const fromMock = MOCK_NEWS_ARTICLES.find(
-      (article) => article.slug?.toLowerCase() === normalizedSlug
-    );
-
-    if (!fromMock) {
+    const article = await getPublicNewsArticleBySlug(slug);
+    if (!article) {
       return errorResponse(404, "NOT_FOUND", "News article not found.");
     }
-
-    return successResponse(fromMock);
+    return successResponse(article);
   } catch (error) {
     return errorResponse(500, "INTERNAL_ERROR", "Failed to fetch news article.", {
       reason: error instanceof Error ? error.message : "Unknown error",

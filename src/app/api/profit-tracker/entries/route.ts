@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
+import { buildMockProfitTrackerEntries } from "@/lib/profit-tracker/mock-data";
 import { createClient } from "@/lib/supabase/server";
 import { hasAdminRole } from "@/lib/auth/admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -118,6 +120,9 @@ function resolveWriteTargetId(params: {
  * List profit tracker entries for the signed-in user, or (admin) ?userId=…
  */
 export async function GET(request: NextRequest): Promise<NextResponse<EntriesResponse>> {
+  if (isDemoMode()) {
+    return successResponse<EntriesData>({ entries: buildMockProfitTrackerEntries() });
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -174,6 +179,41 @@ export async function GET(request: NextRequest): Promise<NextResponse<EntriesRes
  * Replace all entries for the signed-in user, or (admin) target user.
  */
 export async function PUT(request: NextRequest): Promise<NextResponse<EntriesResponse>> {
+  if (isDemoMode()) {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return errorResponse(400, "INVALID_JSON", "Expected JSON body.");
+    }
+    if (!body || typeof body !== "object" || !Array.isArray((body as { entries?: unknown }).entries)) {
+      return errorResponse(400, "INVALID_BODY", "Body must be `{ entries: ProfitTrackerEntry[] }`.");
+    }
+    const rawEntries = (body as { entries: unknown[] }).entries;
+    const entries: ProfitTrackerEntry[] = [];
+    for (const e of rawEntries) {
+      if (!e || typeof e !== "object") continue;
+      const o = e as Record<string, unknown>;
+      if (
+        typeof o.id === "string" &&
+        typeof o.amount === "number" &&
+        typeof o.type === "string" &&
+        typeof o.date === "string" &&
+        typeof o.userId === "string"
+      ) {
+        entries.push({
+          id: o.id,
+          userId: o.userId,
+          amount: o.amount,
+          type: o.type as TrackingType,
+          date: String(o.date).slice(0, 10),
+          name: typeof o.name === "string" ? o.name : undefined,
+          createdAt: typeof o.createdAt === "string" ? o.createdAt : undefined,
+        });
+      }
+    }
+    return successResponse<EntriesData>({ entries });
+  }
   const supabase = await createClient();
   const {
     data: { user },

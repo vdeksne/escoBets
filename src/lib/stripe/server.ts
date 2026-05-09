@@ -27,7 +27,7 @@ let cachedStripe: Stripe | null = null;
 export function getStripe() {
   if (cachedStripe) return cachedStripe;
   cachedStripe = new Stripe(getStripeSecretKey(), {
-    apiVersion: "2026-03-25.dahlia",
+    apiVersion: "2026-04-22.dahlia",
   });
   return cachedStripe;
 }

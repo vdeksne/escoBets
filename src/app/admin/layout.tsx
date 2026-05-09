@@ -1,8 +1,12 @@
 import { redirect } from "next/navigation";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createClient } from "@/lib/supabase/server";
 import { hasAdminRole } from "@/lib/auth/admin";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  if (isDemoMode()) {
+    return children;
+  }
   const supabase = await createClient();
   const {
     data: { user },

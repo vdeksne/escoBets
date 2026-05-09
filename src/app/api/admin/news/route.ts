@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
+import {
+  demoAdminSlugTaken,
+  prependDemoAdminArticle,
+} from "@/lib/news/demo-admin-news-store";
+import { fetchAdminNewsListForEditor } from "@/lib/news/fetch-admin-news-list-for-editor";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
-import { requireAdminUser } from "@/lib/auth/require-admin";
+import { adminError, requireAdminUser } from "@/lib/auth/require-admin";
 import { slugifyHeadline } from "@/lib/news/slug";
 import type { NewsArticle, NewsArticleSection } from "@/types/news";
 import type { ApiError, ApiSuccess } from "@/types/api";
@@ -88,29 +94,20 @@ function normalizeNewsRow(row: Record<string, unknown>): NewsArticle | null {
  * List all news rows for the editor (admin). Includes drafts.
  */
 export async function GET(): Promise<NextResponse<NewsListResponse>> {
-  const adminGate = await requireAdminUser();
-  if (adminGate.error) {
-    return adminGate.error;
-  }
-
-  const service = createServiceRoleClient();
-  if (!service) {
-    return errorResponse(503, "SERVER_CONFIG", "Missing service role configuration.");
-  }
-
-  const { data, error } = await service.from("news").select("*").order("id", { ascending: false });
-  if (error) {
-    return errorResponse(500, "FETCH_FAILED", error.message, error);
-  }
-
-  const items: NewsArticle[] = [];
-  for (const r of data ?? []) {
-    if (r && typeof r === "object") {
-      const n = normalizeNewsRow(r as Record<string, unknown>);
-      if (n) items.push(n);
+  const result = await fetchAdminNewsListForEditor();
+  if (!result.ok) {
+    if (result.kind === "unauthorized") {
+      return adminError(401, "UNAUTHORIZED", "Authentication required.");
     }
+    if (result.kind === "forbidden") {
+      return adminError(403, "FORBIDDEN", "Admin access required.");
+    }
+    if (result.kind === "config") {
+      return errorResponse(503, "SERVER_CONFIG", result.message ?? "Missing service configuration.");
+    }
+    return errorResponse(500, "FETCH_FAILED", result.message ?? "Failed to fetch news.");
   }
-  return successResponse<NewsListData>({ items });
+  return successResponse<NewsListData>({ items: result.items });
 }
 
 export async function POST(request: NextRequest) {
@@ -146,11 +143,6 @@ export async function POST(request: NextRequest) {
     return errorResponse(400, "VALIDATION", "Could not derive a valid slug from the headline.");
   }
 
-  const service = createServiceRoleClient();
-  if (!service) {
-    return errorResponse(503, "SERVER_CONFIG", "Missing service role configuration.");
-  }
-
   const tags = Array.isArray(body.tags) ? body.tags.filter((t): t is string => typeof t === "string") : [];
   const tableOfContents = Array.isArray(body.tableOfContents)
     ? body.tableOfContents.filter((t): t is string => typeof t === "string")
@@ -158,6 +150,51 @@ export async function POST(request: NextRequest) {
   const excerpt = typeof body.excerpt === "string" ? body.excerpt.trim() : "";
   const bodyJson = toBodyJson(bodyHtml);
   const isDraft = Boolean(body.isDraft);
+
+  if (isDemoMode()) {
+    if (demoAdminSlugTaken(baseSlug)) {
+      return errorResponse(409, "DUPLICATE", "A post with this slug or id already exists.");
+    }
+    const created: NewsArticle = {
+      id: baseSlug,
+      slug: baseSlug,
+      imageUrl,
+      date,
+      headline,
+      excerpt: excerpt || undefined,
+      tags,
+      body: bodyJson.length > 0 ? bodyJson : undefined,
+      tableOfContents: tableOfContents.length > 0 ? tableOfContents : undefined,
+      author:
+        typeof body.author === "string" && body.author.trim() ? body.author.trim() : undefined,
+      category:
+        typeof body.category === "string" && body.category.trim()
+          ? body.category.trim()
+          : undefined,
+      readingTime:
+        typeof body.readingTime === "string" && body.readingTime.trim()
+          ? body.readingTime.trim()
+          : undefined,
+      likes: 0,
+      views: 0,
+      comments: 0,
+      isDraft,
+    };
+    prependDemoAdminArticle(created);
+    const listRow = normalizeNewsRow({
+      ...created,
+      is_draft: isDraft,
+    } as unknown as Record<string, unknown>);
+    if (!listRow) {
+      return errorResponse(500, "NORMALIZE_FAILED", "Created row could not be normalized.");
+    }
+    return successResponse<NewsArticle>(listRow);
+  }
+
+  const service = createServiceRoleClient();
+  if (!service) {
+    return errorResponse(503, "SERVER_CONFIG", "Missing service role configuration.");
+  }
 
   const row: Record<string, unknown> = {
     id: baseSlug,

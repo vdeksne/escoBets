@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { isDemoMode } from "@/lib/demo-mode";
 import { fetchXUserTimeline } from "./fetch-x-timeline";
 import type { XTweetCard } from "@/types/x-tweet";
 
@@ -10,6 +11,10 @@ function normalizeXHandle(raw: string): string {
 
 /** Cached user timeline for the home page (5 min). Handle comes from site settings. */
 export async function getCachedXTimelineByHandle(handle: string): Promise<XTweetCard[]> {
+  /** Demo / mock deploy: skip X API entirely — carousel uses manual cards from site settings. */
+  if (isDemoMode()) {
+    return [];
+  }
   const h = normalizeXHandle(handle);
   if (!h) {
     return [];

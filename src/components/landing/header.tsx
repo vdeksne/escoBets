@@ -8,6 +8,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { hasAdminRole } from "@/lib/auth/admin";
+import { isDemoModeClient } from "@/lib/demo-mode";
 import { cn } from "@/lib/utils";
 
 const baseNavLinks = [
@@ -102,7 +103,10 @@ type HeaderProps = {
 
 export function Header({ showDesktopBrand = true }: HeaderProps) {
   const router = useRouter();
-  const supabase = React.useMemo(() => createClient(), []);
+  const supabase = React.useMemo(
+    () => (isDemoModeClient ? null : createClient()),
+    [],
+  );
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
@@ -123,6 +127,15 @@ export function Header({ showDesktopBrand = true }: HeaderProps) {
   }, [mobileOpen]);
 
   React.useEffect(() => {
+    if (isDemoModeClient) {
+      /* Staff nav stays on; auth pill shows Log In → /login so the screen is reachable (demo disables submit there). */
+      setIsAuthenticated(false);
+      setIsAdmin(true);
+      setIsAuthLoading(false);
+      return;
+    }
+    if (!supabase) return;
+
     let alive = true;
 
     const loadAuthState = async () => {
@@ -159,6 +172,11 @@ export function Header({ showDesktopBrand = true }: HeaderProps) {
   }, [supabase]);
 
   const handleLogout = async () => {
+    if (isDemoModeClient || !supabase) {
+      setMobileOpen(false);
+      router.push("/demo");
+      return;
+    }
     setIsSigningOut(true);
     await supabase.auth.signOut();
     setIsSigningOut(false);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { isNewsEngagementAdmin } from "@/lib/news/engagement-viewer";
 import { applyVisitorCookie, getVisitorIdForRequest } from "@/lib/news/engagement-visitor";
@@ -51,6 +52,16 @@ export async function GET(
   }
 
   const { id: visitorId, isNew } = getVisitorIdForRequest(request);
+
+  if (isDemoMode()) {
+    const res = NextResponse.json({
+      success: true,
+      data: { mode: "static" } satisfies EngagementData,
+    } satisfies ApiSuccess<EngagementData>);
+    applyVisitorCookie(res, visitorId, isNew);
+    return res;
+  }
+
   const isAdmin = await isNewsEngagementAdmin();
 
   const supabase = createServiceRoleClient();

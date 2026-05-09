@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { removeUserAvatarObjects } from "@/lib/supabase/avatar-storage-admin";
@@ -30,6 +31,9 @@ function successResponse<T>(data: T): NextResponse<ApiSuccess<T>> {
  * Requires SUPABASE_SERVICE_ROLE_KEY on the server.
  */
 export async function DELETE(): Promise<NextResponse<DeleteResponse>> {
+  if (isDemoMode()) {
+    return errorResponse(403, "DEMO_MODE", "Account deletion is disabled in demo mode.");
+  }
   const supabase = await createClient();
   const {
     data: { user },

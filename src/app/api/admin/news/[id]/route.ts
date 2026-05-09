@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
+import {
+  demoAdminSlugTaken,
+  findDemoAdminArticle,
+  removeDemoAdminArticle,
+  replaceDemoAdminArticle,
+} from "@/lib/news/demo-admin-news-store";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { requireAdminUser } from "@/lib/auth/require-admin";
 import { slugifyHeadline } from "@/lib/news/slug";
@@ -110,6 +117,14 @@ export async function GET(
     return errorResponse(400, "INVALID", "Missing article id.");
   }
 
+  if (isDemoMode()) {
+    const article = findDemoAdminArticle(id);
+    if (!article) {
+      return errorResponse(404, "NOT_FOUND", "Article not found.");
+    }
+    return successResponse<NewsArticle>(article);
+  }
+
   const service = createServiceRoleClient();
   if (!service) {
     return errorResponse(503, "SERVER_CONFIG", "Missing service role configuration.");
@@ -149,6 +164,82 @@ export async function PUT(
     body = (await request.json()) as UpdateBody;
   } catch {
     return errorResponse(400, "INVALID_JSON", "Expected JSON body.");
+  }
+
+  if (isDemoMode()) {
+    const existingArticle = findDemoAdminArticle(id);
+    if (!existingArticle) {
+      return errorResponse(404, "NOT_FOUND", "Article not found.");
+    }
+
+    const e = existingArticle;
+    const headline =
+      typeof body.headline === "string" ? body.headline.trim() : e.headline;
+    const imageUrl =
+      typeof body.imageUrl === "string" ? body.imageUrl.trim() : e.imageUrl;
+    const date = typeof body.date === "string" ? body.date.trim() : e.date;
+    if (!headline || !imageUrl || !date) {
+      return errorResponse(400, "VALIDATION", "headline, imageUrl, and date are required.");
+    }
+
+    const slugInput = typeof body.slug === "string" && body.slug.trim() ? body.slug.trim() : "";
+    const nextSlug = slugifyHeadline(slugInput || headline) || e.slug || id;
+    if (!nextSlug) {
+      return errorResponse(400, "VALIDATION", "Invalid slug.");
+    }
+
+    if (demoAdminSlugTaken(nextSlug, e.id)) {
+      return errorResponse(409, "DUPLICATE", "Slug is already in use.");
+    }
+
+    const tags = Array.isArray(body.tags)
+      ? body.tags.filter((t): t is string => typeof t === "string")
+      : e.tags ?? [];
+    const tableOfContents = Array.isArray(body.tableOfContents)
+      ? body.tableOfContents.filter((t): t is string => typeof t === "string")
+      : e.tableOfContents ?? [];
+    const excerpt =
+      typeof body.excerpt === "string" ? body.excerpt : e.excerpt ?? "";
+    const bodyJson =
+      typeof body.bodyHtml === "string"
+        ? toBodyJson(body.bodyHtml)
+        : e.body && e.body.length > 0
+          ? e.body
+          : [];
+    const isDraft =
+      typeof body.isDraft === "boolean" ? body.isDraft : Boolean(e.isDraft);
+
+    const next: NewsArticle = {
+      ...e,
+      id,
+      slug: nextSlug,
+      imageUrl,
+      date,
+      headline,
+      excerpt: excerpt ? excerpt : undefined,
+      tags,
+      body: bodyJson.length > 0 ? bodyJson : undefined,
+      tableOfContents: tableOfContents.length > 0 ? tableOfContents : undefined,
+      author:
+        typeof body.author === "string" && body.author.trim()
+          ? body.author.trim()
+          : e.author,
+      category:
+        typeof body.category === "string" && body.category.trim()
+          ? body.category.trim()
+          : e.category,
+      readingTime:
+        typeof body.readingTime === "string" && body.readingTime.trim()
+          ? body.readingTime.trim()
+          : e.readingTime,
+      likes: typeof e.likes === "number" ? e.likes : 0,
+      views: typeof e.views === "number" ? e.views : 0,
+      comments: typeof e.comments === "number" ? e.comments : 0,
+      isDraft,
+    };
+
+    replaceDemoAdminArticle(id, next);
+    return successResponse<NewsArticle>(next);
   }
 
   const service = createServiceRoleClient();
@@ -252,6 +343,14 @@ export async function DELETE(
   const id = decodeURIComponent(rawId).trim();
   if (!id) {
     return errorResponse(400, "INVALID", "Missing article id.");
+  }
+
+  if (isDemoMode()) {
+    const ok = removeDemoAdminArticle(id);
+    if (!ok) {
+      return errorResponse(404, "NOT_FOUND", "Article not found.");
+    }
+    return successResponse<{ deleted: true }>({ deleted: true });
   }
 
   const service = createServiceRoleClient();

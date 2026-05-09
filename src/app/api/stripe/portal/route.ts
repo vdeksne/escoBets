@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe, isStripeSecretConfigured } from "@/lib/stripe/server";
 
@@ -21,6 +22,9 @@ async function getOrCreateCustomerId(email: string) {
 
 export async function GET() {
   const origin = await getOrigin();
+  if (isDemoMode()) {
+    return NextResponse.redirect(new URL("/account/subscription?demo=1", origin));
+  }
   if (!isStripeSecretConfigured()) {
     return NextResponse.redirect(new URL("/account/subscription?stripe=missing", origin));
   }

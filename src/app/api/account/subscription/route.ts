@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { isDemoMode } from "@/lib/demo-mode";
 import { getStripe, isStripeSecretConfigured } from "@/lib/stripe/server";
 import { STRIPE_ENV_HELP } from "@/lib/stripe/env-help";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,26 @@ async function resolvePlanName(stripe: ReturnType<typeof getStripe>, price: Stri
 }
 
 export async function GET() {
+  if (isDemoMode()) {
+    const data: SubscriptionAccountData = {
+      planSummary: {
+        planName: "Demo",
+        billingCycle: "monthly",
+        planCost: "—",
+        nextBillingDate: "",
+        status: "demo",
+      },
+      paymentMethod: {
+        brand: "—",
+        last4: "—",
+        expiryMonth: "—",
+        expiryYear: "—",
+        billingEmail: "demo@escobets.com",
+      },
+      invoices: [],
+    };
+    return NextResponse.json(data);
+  }
   if (!isStripeSecretConfigured()) {
     return NextResponse.json(
       {

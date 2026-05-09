@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { isDemoMode } from "@/lib/demo-mode";
 import { createClient } from "@/lib/supabase/server";
 import { hasAdminRole } from "@/lib/auth/admin";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
@@ -377,18 +378,20 @@ async function fetchMergedUsersForAdmin(): Promise<AdminUser[] | null> {
 export async function GET(
   request: NextRequest
 ): Promise<NextResponse<UsersResponse>> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  if (!isDemoMode()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
-  }
+    if (authError || !user) {
+      return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
+    }
 
-  if (!hasAdminRole(user)) {
-    return errorResponse(403, "FORBIDDEN", "Admin access required.");
+    if (!hasAdminRole(user)) {
+      return errorResponse(403, "FORBIDDEN", "Admin access required.");
+    }
   }
 
   const url = new URL(request.url);
@@ -466,18 +469,20 @@ const MAX_DELETE_BATCH = 500;
 export async function DELETE(
   request: NextRequest
 ): Promise<NextResponse<ApiSuccess<UsersDeleteData> | ApiError>> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  if (!isDemoMode()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
-  }
+    if (authError || !user) {
+      return errorResponse(401, "UNAUTHORIZED", "Authentication required.");
+    }
 
-  if (!hasAdminRole(user)) {
-    return errorResponse(403, "FORBIDDEN", "Admin access required.");
+    if (!hasAdminRole(user)) {
+      return errorResponse(403, "FORBIDDEN", "Admin access required.");
+    }
   }
 
   let body: unknown;
@@ -507,9 +512,13 @@ export async function DELETE(
   if (ids.length > MAX_DELETE_BATCH) {
     return errorResponse(
       400,
-      "INVALID_BODY",
-      `Too many ids (max ${MAX_DELETE_BATCH}).`
+      "TOO_MANY_IDS",
+      `Cannot delete more than ${MAX_DELETE_BATCH} users at once.`
     );
+  }
+
+  if (isDemoMode()) {
+    return successResponse<UsersDeleteData>({ deleted: ids.length });
   }
 
   const admin = createServiceRoleClient();

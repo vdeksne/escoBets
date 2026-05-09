@@ -1,5 +1,5 @@
 import type { ProfitTrackerEntry } from "@/types/profit-tracker";
-import { MOCK_ENTRIES } from "@/lib/profit-tracker/mock-data";
+import { buildMockProfitTrackerEntries } from "@/lib/profit-tracker/mock-data";
 import { generateProfitTrackerEntryId } from "@/lib/profit-tracker/entry-id";
 
 const STORAGE_KEY = "esco.profit-tracker.entries";
@@ -47,23 +47,24 @@ export function readLocalProfitTrackerEntries(scope?: string): ProfitTrackerEntr
 }
 
 /**
- * Synchronous read for anonymous demo / first paint: may seed `MOCK_ENTRIES` in localStorage.
+ * Synchronous read for anonymous demo / first paint: may seed demo rows in localStorage.
  * Prefer the async API path when the user is signed in.
  */
 export function loadProfitTrackerEntries(scope?: string): ProfitTrackerEntry[] {
-  if (typeof window === "undefined") return MOCK_ENTRIES;
+  const seed = buildMockProfitTrackerEntries();
+  if (typeof window === "undefined") return seed;
   const key = storageKey(scope);
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) {
-      window.localStorage.setItem(key, JSON.stringify(MOCK_ENTRIES));
-      return MOCK_ENTRIES;
+      window.localStorage.setItem(key, JSON.stringify(seed));
+      return seed;
     }
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return MOCK_ENTRIES;
+    if (!Array.isArray(parsed)) return seed;
     return parsed as ProfitTrackerEntry[];
   } catch {
-    return MOCK_ENTRIES;
+    return seed;
   }
 }
 

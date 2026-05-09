@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import { isDemoMode } from "@/lib/demo-mode";
+import { getDemoSupabaseUser } from "@/lib/auth/demo-user";
 import { hasAdminRole } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
@@ -19,6 +21,9 @@ export type AdminAuthResult =
 
 /** Returns the signed-in admin user, or a JSON `NextResponse` to return from the route. */
 export async function requireAdminUser(): Promise<AdminAuthResult> {
+  if (isDemoMode()) {
+    return { user: getDemoSupabaseUser(), error: null };
+  }
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { User } from "@supabase/supabase-js";
+import { isDemoMode } from "@/lib/demo-mode";
+import { getDemoProfile } from "@/lib/auth/demo-user";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { fetchUserFromAuthServer } from "@/lib/auth/fetch-user-from-auth-server";
@@ -235,6 +237,9 @@ function toProfile(params: {
 }
 
 export async function GET(): Promise<NextResponse<ProfileResponse>> {
+  if (isDemoMode()) {
+    return successResponse(getDemoProfile());
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -281,6 +286,35 @@ export async function GET(): Promise<NextResponse<ProfileResponse>> {
 }
 
 export async function PUT(request: NextRequest): Promise<NextResponse<ProfileResponse>> {
+  if (isDemoMode()) {
+    let payload: ProfilePayload;
+    try {
+      payload = (await request.json()) as ProfilePayload;
+    } catch {
+      return errorResponse(400, "INVALID_JSON", "Invalid JSON body.");
+    }
+    const base = getDemoProfile();
+    const trim = (v: string | undefined) => (typeof v === "string" ? v.trim() : undefined);
+    return successResponse({
+      ...base,
+      firstName: trim(payload.firstName) ?? base.firstName,
+      lastName: trim(payload.lastName) ?? base.lastName,
+      phone: trim(payload.phone) ?? base.phone,
+      dateOfBirth: trim(payload.dateOfBirth) ?? base.dateOfBirth,
+      email: trim(payload.email) ?? base.email,
+      userName: trim(payload.userName ?? payload.username) ?? base.userName,
+      avatarUrl: trim(payload.avatarUrl) ?? base.avatarUrl,
+      address: payload.address
+        ? {
+            country: trim(payload.address.country) ?? "",
+            city: trim(payload.address.city) ?? "",
+            street: trim(payload.address.street) ?? "",
+            apartment: trim(payload.address.apartment) ?? "",
+            postcode: trim(payload.address.postcode) ?? "",
+          }
+        : base.address,
+    });
+  }
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isDemoMode } from "@/lib/demo-mode";
 
 const authRoutes = ["/login", "/signup", "/forgot-password"];
 const protectedRoutes = [
@@ -16,6 +17,18 @@ function matchesPrefix(pathname: string, prefixes: string[]) {
 }
 
 export async function middleware(request: NextRequest) {
+  /* --------------------------------------------------------------------------
+   * Demo / paused Supabase: do not call Supabase on the edge (avoids 504
+   * MIDDLEWARE_INVOCATION_TIMEOUT). Re-enable DB auth by setting
+   * `ESCOBETS_DEMO_BUILD = false` in `src/lib/demo-mode.ts` or
+   * `NEXT_PUBLIC_DEMO_MODE=false` in env.
+   * -------------------------------------------------------------------------- */
+  if (isDemoMode()) {
+    return NextResponse.next({
+      request: { headers: request.headers },
+    });
+  }
+
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
